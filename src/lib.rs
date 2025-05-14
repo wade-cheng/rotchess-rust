@@ -1,3 +1,5 @@
+pub mod icon;
+
 mod screen;
 use screen::{Command, Event, GlobalData, Screen};
 
