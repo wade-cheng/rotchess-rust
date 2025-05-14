@@ -1,9 +1,8 @@
 use macroquad::prelude::Conf; // from miniquad
 use macroquad::window;
 use rotchess_mq::App;
+use rotchess_mq::event_queue;
 use rotchess_mq::icon;
-
-mod event_queue;
 
 fn window_conf() -> Conf {
     Conf {
