@@ -1,11 +1,30 @@
 use macroquad::color::Color;
+use macroquad::color::colors::*;
 use macroquad::input;
 use macroquad::input::MouseButton;
+use macroquad::shapes;
+use macroquad::text;
+use macroquad::window;
 use statig::Response;
 use statig::state_machine;
 
+pub enum Command {
+    Update,
+    Render,
+}
+
 pub struct GlobalData {
+    pub tick_command: Command,
     pub bg_color: Color,
+}
+
+impl GlobalData {
+    pub fn new() -> Self {
+        Self {
+            tick_command: Command::Render,
+            bg_color: macroquad::color::RED,
+        }
+    }
 }
 
 /// Dummy value enum to satisfy type checking. If we leave the start state without an event param,
@@ -25,6 +44,13 @@ pub struct Screen;
 impl Screen {
     #[state]
     fn start(event: &Event, context: &mut GlobalData) -> Response<State> {
+        match context.tick_command {
+            Command::Update => Screen::start_update(event, context),
+            Command::Render => Screen::start_render(event, context),
+        }
+    }
+
+    fn start_update(event: &Event, context: &mut GlobalData) -> Response<State> {
         if input::is_mouse_button_pressed(MouseButton::Left) {
             context.bg_color = Color {
                 r: rand::random_range(0.0..1.0),
@@ -33,6 +59,25 @@ impl Screen {
                 a: 1.0,
             }
         }
-        Response::Super
+
+        Response::Handled
+    }
+
+    fn start_render(event: &Event, context: &GlobalData) -> Response<State> {
+        window::clear_background(context.bg_color);
+
+        shapes::draw_line(40.0, 40.0, 100.0, 200.0, 15.0, BLUE);
+        shapes::draw_rectangle(
+            window::screen_width() / 2.0 - 60.0,
+            100.0,
+            120.0,
+            60.0,
+            GREEN,
+        );
+        let (x, y) = input::mouse_position();
+        shapes::draw_circle(x, y, 15.0, YELLOW);
+        text::draw_text("HELLO", 20.0, 20.0, 20.0, DARKGRAY);
+
+        Response::Handled
     }
 }
