@@ -6,13 +6,22 @@ use macroquad::shapes;
 use macroquad::text;
 use macroquad::window;
 
+mod screen;
+use screen::Screen;
+
+use statig::blocking::{IntoStateMachineExt, StateMachine};
+
 pub struct App {
     bg_color: Color,
+    screen: StateMachine<Screen>,
 }
 
 impl App {
     pub fn new() -> Self {
-        App { bg_color: RED }
+        App {
+            bg_color: RED,
+            screen: Screen::default().state_machine(),
+        }
     }
 
     pub fn update(&mut self) {
@@ -24,6 +33,7 @@ impl App {
                 a: 1.0,
             }
         }
+        self.screen.handle(&());
     }
 
     pub fn render(&self) {
