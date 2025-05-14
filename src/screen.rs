@@ -1,6 +1,7 @@
 use macroquad::color::Color;
 use macroquad::color::colors::*;
 use macroquad::input;
+use macroquad::input::KeyCode;
 use macroquad::input::MouseButton;
 use macroquad::shapes;
 use macroquad::text;
@@ -51,6 +52,7 @@ impl Screen {
     }
 
     fn start_update(event: &Event, context: &mut GlobalData) -> Response<State> {
+        println!("left clicked");
         if input::is_mouse_button_pressed(MouseButton::Left) {
             context.bg_color = Color {
                 r: rand::random_range(0.0..1.0),
@@ -58,6 +60,10 @@ impl Screen {
                 b: rand::random_range(0.0..1.0),
                 a: 1.0,
             }
+        }
+
+        if input::is_mouse_button_pressed(MouseButton::Right) {
+            return Response::Transition(State::start());
         }
 
         Response::Handled
@@ -77,6 +83,41 @@ impl Screen {
         let (x, y) = input::mouse_position();
         shapes::draw_circle(x, y, 15.0, YELLOW);
         text::draw_text("HELLO", 20.0, 20.0, 20.0, DARKGRAY);
+
+        Response::Handled
+    }
+
+    #[state]
+    fn darkness(event: &Event, context: &mut GlobalData) -> Response<State> {
+        match context.tick_command {
+            Command::Update => Screen::darkness_update(event, context),
+            Command::Render => Screen::darkness_render(event, context),
+        }
+    }
+
+    fn darkness_update(event: &Event, context: &mut GlobalData) -> Response<State> {
+        if input::is_key_pressed(KeyCode::Space) {
+            context.bg_color = Color {
+                r: rand::random_range(0.0..0.3),
+                g: rand::random_range(0.0..0.3),
+                b: rand::random_range(0.0..0.3),
+                a: 1.0,
+            }
+        }
+
+        if input::is_key_pressed(KeyCode::A) {
+            return Response::Transition(State::start());
+        }
+
+        Response::Handled
+    }
+
+    fn darkness_render(event: &Event, context: &GlobalData) -> Response<State> {
+        window::clear_background(context.bg_color);
+
+        let (x, y) = input::mouse_position();
+        shapes::draw_circle(x, y, 15.0, BLACK);
+        text::draw_text("HELLO", 20.0, 20.0, 20.0, WHITE);
 
         Response::Handled
     }
