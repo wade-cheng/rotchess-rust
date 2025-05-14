@@ -43,7 +43,7 @@ pub struct Screen;
 
 #[state_machine(initial = "State::start()")]
 impl Screen {
-    #[state]
+    #[state(entry_action = "make_screen_light")]
     fn start(event: &Event, context: &mut GlobalData) -> Response<State> {
         match context.tick_command {
             Some(Command::Update) => Screen::start_update(event, context),
@@ -52,14 +52,19 @@ impl Screen {
         }
     }
 
+    #[action]
+    fn make_screen_light(context: &mut GlobalData) {
+        context.bg_color = Color {
+            r: rand::random_range(0.7..1.0),
+            g: rand::random_range(0.7..1.0),
+            b: rand::random_range(0.7..1.0),
+            a: 1.0,
+        }
+    }
+
     fn start_update(event: &Event, context: &mut GlobalData) -> Response<State> {
         if input::is_mouse_button_pressed(MouseButton::Left) {
-            context.bg_color = Color {
-                r: rand::random_range(0.0..1.0),
-                g: rand::random_range(0.0..1.0),
-                b: rand::random_range(0.0..1.0),
-                a: 1.0,
-            }
+            Screen::make_screen_light(context);
         }
 
         if input::is_mouse_button_pressed(MouseButton::Right) {
@@ -87,7 +92,7 @@ impl Screen {
         Response::Handled
     }
 
-    #[state]
+    #[state(entry_action = "make_screen_dark")]
     fn darkness(event: &Event, context: &mut GlobalData) -> Response<State> {
         match context.tick_command {
             Some(Command::Update) => Screen::darkness_update(event, context),
@@ -96,14 +101,19 @@ impl Screen {
         }
     }
 
+    #[action]
+    fn make_screen_dark(context: &mut GlobalData) {
+        context.bg_color = Color {
+            r: rand::random_range(0.0..0.3),
+            g: rand::random_range(0.0..0.3),
+            b: rand::random_range(0.0..0.3),
+            a: 1.0,
+        }
+    }
+
     fn darkness_update(event: &Event, context: &mut GlobalData) -> Response<State> {
         if input::is_key_pressed(KeyCode::Space) {
-            context.bg_color = Color {
-                r: rand::random_range(0.0..0.3),
-                g: rand::random_range(0.0..0.3),
-                b: rand::random_range(0.0..0.3),
-                a: 1.0,
-            }
+            Screen::make_screen_dark(context);
         }
 
         if input::is_key_pressed(KeyCode::A) {
