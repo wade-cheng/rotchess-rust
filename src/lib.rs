@@ -7,37 +7,30 @@ use macroquad::text;
 use macroquad::window;
 
 mod screen;
-use screen::Screen;
+use screen::{Event, GlobalData, Screen};
 
 use statig::blocking::{IntoStateMachineExt, StateMachine};
 
 pub struct App {
-    bg_color: Color,
+    context: GlobalData,
     screen: StateMachine<Screen>,
 }
 
 impl App {
     pub fn new() -> Self {
         App {
-            bg_color: RED,
+            context: GlobalData { bg_color: RED },
             screen: Screen::default().state_machine(),
         }
     }
 
     pub fn update(&mut self) {
-        if input::is_mouse_button_pressed(MouseButton::Left) {
-            self.bg_color = Color {
-                r: rand::random_range(0.0..1.0),
-                g: rand::random_range(0.0..1.0),
-                b: rand::random_range(0.0..1.0),
-                a: 1.0,
-            }
-        }
-        self.screen.handle(&());
+        self.screen
+            .handle_with_context(&Event::Dummy1, &mut self.context);
     }
 
     pub fn render(&self) {
-        window::clear_background(self.bg_color);
+        window::clear_background(self.context.bg_color);
 
         shapes::draw_line(40.0, 40.0, 100.0, 200.0, 15.0, BLUE);
         shapes::draw_rectangle(
