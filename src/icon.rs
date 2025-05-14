@@ -1,4 +1,6 @@
-use macroquad::{miniquad::conf::Icon, prelude::*};
+use macroquad::miniquad::conf::Icon;
+use macroquad::prelude::ImageFormat;
+use macroquad::texture::Image;
 
 /// Gets the icon for the game.
 ///
