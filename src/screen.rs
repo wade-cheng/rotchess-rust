@@ -35,7 +35,14 @@ pub enum Event {
     /// Dummy value. will be changed.
     Dummy1,
     /// Dummy value. will be changed.
-    Dummy2,
+    LeftClick {
+        x: f32,
+        y: f32,
+    },
+    RightClick {
+        x: f32,
+        y: f32,
+    },
 }
 
 #[derive(Default)]

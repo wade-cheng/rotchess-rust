@@ -1,6 +1,7 @@
+pub mod event_queue;
 pub mod icon;
+pub mod screen;
 
-mod screen;
 use screen::{Command, Event, GlobalData, Screen};
 
 use statig::blocking::{IntoStateMachineExt, StateMachine};

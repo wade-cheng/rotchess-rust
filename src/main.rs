@@ -3,7 +3,7 @@ use macroquad::window;
 use rotchess_mq::App;
 use rotchess_mq::icon;
 
-mod icon;
+mod event_queue;
 
 fn window_conf() -> Conf {
     Conf {
@@ -19,6 +19,7 @@ fn window_conf() -> Conf {
 async fn main() {
     let mut app = App::new();
     loop {
+        let events = event_queue::get_event_queue();
         app.update();
         app.render();
         window::next_frame().await
