@@ -1,4 +1,4 @@
-use macroquad::prelude::*;
+use macroquad::{prelude::*, window};
 use rotchess_mq::App;
 
 mod icon;
@@ -15,5 +15,10 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    App::new().run().await;
+    let mut app = App::new();
+    loop {
+        app.update();
+        app.render();
+        window::next_frame().await
+    }
 }
