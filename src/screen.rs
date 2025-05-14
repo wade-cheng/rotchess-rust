@@ -15,14 +15,14 @@ pub enum Command {
 }
 
 pub struct GlobalData {
-    pub tick_command: Command,
+    pub tick_command: Option<Command>,
     pub bg_color: Color,
 }
 
 impl GlobalData {
     pub fn new() -> Self {
         Self {
-            tick_command: Command::Render,
+            tick_command: None,
             bg_color: macroquad::color::RED,
         }
     }
@@ -46,13 +46,13 @@ impl Screen {
     #[state]
     fn start(event: &Event, context: &mut GlobalData) -> Response<State> {
         match context.tick_command {
-            Command::Update => Screen::start_update(event, context),
-            Command::Render => Screen::start_render(event, context),
+            Some(Command::Update) => Screen::start_update(event, context),
+            Some(Command::Render) => Screen::start_render(event, context),
+            None => unreachable!(),
         }
     }
 
     fn start_update(event: &Event, context: &mut GlobalData) -> Response<State> {
-        println!("left clicked");
         if input::is_mouse_button_pressed(MouseButton::Left) {
             context.bg_color = Color {
                 r: rand::random_range(0.0..1.0),
@@ -63,7 +63,7 @@ impl Screen {
         }
 
         if input::is_mouse_button_pressed(MouseButton::Right) {
-            return Response::Transition(State::start());
+            return Response::Transition(State::darkness());
         }
 
         Response::Handled
@@ -90,8 +90,9 @@ impl Screen {
     #[state]
     fn darkness(event: &Event, context: &mut GlobalData) -> Response<State> {
         match context.tick_command {
-            Command::Update => Screen::darkness_update(event, context),
-            Command::Render => Screen::darkness_render(event, context),
+            Some(Command::Update) => Screen::darkness_update(event, context),
+            Some(Command::Render) => Screen::darkness_render(event, context),
+            None => unreachable!(),
         }
     }
 
