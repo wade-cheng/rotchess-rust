@@ -27,12 +27,8 @@ impl App {
                 60.0,
                 GREEN,
             );
-            shapes::draw_circle(
-                window::screen_width() - 30.0,
-                window::screen_height() - 30.0,
-                15.0,
-                YELLOW,
-            );
+            let (x, y) = input::mouse_position();
+            shapes::draw_circle(x, y, 15.0, YELLOW);
             text::draw_text("HELLO", 20.0, 20.0, 20.0, DARKGRAY);
 
             if input::is_mouse_button_pressed(MouseButton::Left) {
