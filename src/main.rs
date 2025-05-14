@@ -1,4 +1,5 @@
-use macroquad::{prelude::*, window};
+use macroquad::prelude::Conf; // from miniquad
+use macroquad::window;
 use rotchess_mq::App;
 
 mod icon;
