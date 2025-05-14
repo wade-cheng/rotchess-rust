@@ -46,7 +46,7 @@ fn rotchess_icon() -> Icon {
 
 fn window_conf() -> Conf {
     Conf {
-        window_title: String::from("Window Conf"),
+        window_title: String::from("Rotating Chess"),
         window_height: 400,
         window_width: 600,
         icon: Some(rotchess_icon()),
