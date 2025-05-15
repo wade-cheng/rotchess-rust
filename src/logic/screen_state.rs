@@ -30,8 +30,6 @@ impl GlobalData {
 /// we're probably hand-coding an event queue later anyways.
 pub enum Event {
     /// Dummy value. will be changed.
-    Dummy1,
-    /// Dummy value. will be changed.
     LeftClick {
         x: f32,
         y: f32,
@@ -40,6 +38,8 @@ pub enum Event {
         x: f32,
         y: f32,
     },
+    Space,
+    A,
 }
 
 #[derive(Default)]
