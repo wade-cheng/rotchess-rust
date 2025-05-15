@@ -11,7 +11,7 @@ use crate::logic::screen_state::Event;
 use crate::logic::screen_state::GlobalData;
 use crate::logic::screen_state::Screen;
 use crate::logic::screen_state::State;
-pub fn start_update(event: &Event, context: &mut GlobalData) -> Response<State> {
+pub fn start_update(context: &mut GlobalData) -> Response<State> {
     if input::is_mouse_button_pressed(MouseButton::Left) {
         Screen::make_screen_light(context);
     }
@@ -41,7 +41,7 @@ pub fn start_render(context: &GlobalData) -> Response<State> {
     Response::Handled
 }
 
-pub fn darkness_update(event: &Event, context: &mut GlobalData) -> Response<State> {
+pub fn darkness_update(context: &mut GlobalData) -> Response<State> {
     if input::is_key_pressed(KeyCode::Space) {
         Screen::make_screen_dark(context);
     }

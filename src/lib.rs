@@ -18,14 +18,13 @@ impl App {
     }
 
     pub fn update(&mut self, events: Vec<Event>) {
+        self.context.event_queue = events;
         self.context.tick_command = Some(Command::Update);
-        self.screen
-            .handle_with_context(&Event::Dummy1, &mut self.context);
+        self.screen.handle_with_context(&(), &mut self.context);
     }
 
     pub fn render(&mut self) {
         self.context.tick_command = Some(Command::Render);
-        self.screen
-            .handle_with_context(&Event::Dummy1, &mut self.context);
+        self.screen.handle_with_context(&(), &mut self.context);
     }
 }

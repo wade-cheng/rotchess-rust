@@ -12,6 +12,7 @@ pub enum Command {
 pub struct GlobalData {
     pub tick_command: Option<Command>,
     pub bg_color: Color,
+    pub event_queue: Vec<Event>,
 }
 
 impl GlobalData {
@@ -19,6 +20,7 @@ impl GlobalData {
         Self {
             tick_command: None,
             bg_color: macroquad::color::RED,
+            event_queue: Vec::new(),
         }
     }
 }
@@ -46,9 +48,9 @@ pub struct Screen;
 #[state_machine(initial = "State::start()")]
 impl Screen {
     #[state(entry_action = "make_screen_light")]
-    pub fn start(event: &Event, context: &mut GlobalData) -> Response<State> {
+    pub fn start(context: &mut GlobalData) -> Response<State> {
         match context.tick_command {
-            Some(Command::Update) => screen_logic::start_update(event, context),
+            Some(Command::Update) => screen_logic::start_update(context),
             Some(Command::Render) => screen_logic::start_render(context),
             None => unreachable!(),
         }
@@ -65,9 +67,9 @@ impl Screen {
     }
 
     #[state(entry_action = "make_screen_dark")]
-    pub fn darkness(event: &Event, context: &mut GlobalData) -> Response<State> {
+    pub fn darkness(context: &mut GlobalData) -> Response<State> {
         match context.tick_command {
-            Some(Command::Update) => screen_logic::darkness_update(event, context),
+            Some(Command::Update) => screen_logic::darkness_update(context),
             Some(Command::Render) => screen_logic::darkness_render(context),
             None => unreachable!(),
         }
