@@ -1,4 +1,4 @@
-use crate::screen::Event;
+use crate::logic::screen_state::Event;
 
 /// Error: the Event here is not imported properly.
 /// We need to somehow import src/screen/Event into here.

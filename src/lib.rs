@@ -1,9 +1,7 @@
-pub mod event_queue;
 pub mod icon;
-pub mod screen;
+pub mod logic;
 
-use screen::{Command, Event, GlobalData, Screen};
-
+use logic::screen_state::{Command, Event, GlobalData, Screen};
 use statig::blocking::{IntoStateMachineExt, StateMachine};
 
 pub struct App {
@@ -19,7 +17,7 @@ impl App {
         }
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, events: Vec<Event>) {
         self.context.tick_command = Some(Command::Update);
         self.screen
             .handle_with_context(&Event::Dummy1, &mut self.context);

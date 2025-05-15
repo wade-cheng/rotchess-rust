@@ -7,24 +7,23 @@ use macroquad::text;
 use macroquad::window;
 use statig::Response;
 
-use crate::screen::Event;
-use crate::screen::GlobalData;
-use crate::screen::Screen;
-use crate::screen::State;
-
-fn start_update(event: &Event, context: &mut GlobalData) -> Response<State> {
+use crate::logic::screen_state::Event;
+use crate::logic::screen_state::GlobalData;
+use crate::logic::screen_state::Screen;
+use crate::logic::screen_state::State;
+pub fn start_update(event: &Event, context: &mut GlobalData) -> Response<State> {
     if input::is_mouse_button_pressed(MouseButton::Left) {
         Screen::make_screen_light(context);
     }
 
     if input::is_mouse_button_pressed(MouseButton::Right) {
-        return Response::Transition(State::darkness());
+        return Response::Transition(State::Darkness {});
     }
 
     Response::Handled
 }
 
-fn start_render(event: &Event, context: &GlobalData) -> Response<State> {
+pub fn start_render(context: &GlobalData) -> Response<State> {
     window::clear_background(context.bg_color);
 
     shapes::draw_line(40.0, 40.0, 100.0, 200.0, 15.0, BLUE);
@@ -42,19 +41,19 @@ fn start_render(event: &Event, context: &GlobalData) -> Response<State> {
     Response::Handled
 }
 
-fn darkness_update(event: &Event, context: &mut GlobalData) -> Response<State> {
+pub fn darkness_update(event: &Event, context: &mut GlobalData) -> Response<State> {
     if input::is_key_pressed(KeyCode::Space) {
         Screen::make_screen_dark(context);
     }
 
     if input::is_key_pressed(KeyCode::A) {
-        return Response::Transition(State::start());
+        return Response::Transition(State::Start {});
     }
 
     Response::Handled
 }
 
-fn darkness_render(event: &Event, context: &GlobalData) -> Response<State> {
+pub fn darkness_render(context: &GlobalData) -> Response<State> {
     window::clear_background(context.bg_color);
 
     let (x, y) = input::mouse_position();

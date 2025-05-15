@@ -1,8 +1,9 @@
 use macroquad::prelude::Conf; // from miniquad
 use macroquad::window;
+
 use rotchess_mq::App;
-use rotchess_mq::event_queue;
 use rotchess_mq::icon;
+use rotchess_mq::logic::event_queue;
 
 fn window_conf() -> Conf {
     Conf {
@@ -19,7 +20,7 @@ async fn main() {
     let mut app = App::new();
     loop {
         let events = event_queue::get_event_queue();
-        app.update();
+        app.update(events);
         app.render();
         window::next_frame().await
     }
