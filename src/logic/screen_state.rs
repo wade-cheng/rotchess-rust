@@ -20,7 +20,7 @@ impl GlobalData {
         Self {
             tick_command: None,
             bg_color: macroquad::color::RED,
-            event_queue: Vec::new(),
+            event_queue: Vec::with_capacity(0),
         }
     }
 }
