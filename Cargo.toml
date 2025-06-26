@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+assert_approx_eq = "1.1.0"
+egui = "0.31.1"
+egui-macroquad = "0.17.3"
 macroquad = "0.4.14"
-rand = "0.9.1"
-statig = "0.3.0"
