@@ -129,6 +129,15 @@ pub enum Side {
     White,
 }
 
+impl Side {
+    pub fn to_file_desc(&self) -> &str {
+        match self {
+            Side::Black => "B",
+            Side::White => "W",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PieceKind {
     Pawn,
@@ -137,6 +146,19 @@ pub enum PieceKind {
     Bishop,
     Queen,
     King,
+}
+
+impl PieceKind {
+    pub fn to_file_desc(&self) -> &str {
+        match self {
+            PieceKind::Pawn => "pawn",
+            PieceKind::Rook => "rook",
+            PieceKind::Knight => "knight",
+            PieceKind::Bishop => "bishop",
+            PieceKind::Queen => "queen",
+            PieceKind::King => "king",
+        }
+    }
 }
 
 // pub fn __init_movement(&self):
@@ -280,7 +302,11 @@ impl PieceKind {
     }
 }
 
-pub const PIECE_RADIUS: f32 = 7.;
+/// Radius of a piece in rotchess-units.
+///
+/// 17/50 is parity from rotchess-python, where a tile was 50 pixels wide and
+/// a piece had a radius of 17 pixels.
+pub const PIECE_RADIUS: f32 = 17.0 / 50.0;
 
 /// The data about a piece that matters.
 ///
@@ -371,6 +397,22 @@ impl Piece {
         }
     }
 
+    /// From tile indices. i.e. tile (0,0) is center (0.5, 0.5).
+    pub fn from_tile(tile: (u8, u8), angle: f32, side: Side, kind: PieceKind) -> Self {
+        let (x, y) = tile;
+        Self {
+            core: CorePieceData {
+                center: (x as f32 + 0.5, y as f32 + 0.5),
+                angle,
+                side,
+                kind,
+            },
+            secondary: None,
+            tertiary: None,
+            game: GamePieceData { selected: false },
+        }
+    }
+
     pub fn collidepoint(&self, x: f32, y: f32) -> bool {
         (x - self.core.center.0).powf(2.) + (y - self.core.center.1).powf(2.)
             < PIECE_RADIUS.powf(2.)
@@ -396,6 +438,10 @@ impl Piece {
 
     pub fn angle(&self) -> f32 {
         return self.core.angle;
+    }
+
+    pub fn rotate_to(&mut self, angle: f32) {
+        self.core.angle = angle;
     }
 
     pub fn side(&self) -> Side {
@@ -514,7 +560,8 @@ impl Piece {
 }
 
 pub struct Pieces {
-    inner: Vec<Piece>,
+    /// TODO: NOT PUB!!!
+    pub inner: Vec<Piece>,
 }
 
 impl Pieces {
@@ -525,7 +572,44 @@ impl Pieces {
         todo!()
     }
 
+    pub fn pieces(&self) -> &[Piece] {
+        &self.inner
+    }
+
     pub fn standard_board() -> Self {
-        Self { inner: vec![] }
+        let mut inner = vec![];
+
+        const ORDER: [PieceKind; 8] = [
+            PieceKind::Rook,
+            PieceKind::Knight,
+            PieceKind::Bishop,
+            PieceKind::Queen,
+            PieceKind::King,
+            PieceKind::Bishop,
+            PieceKind::Knight,
+            PieceKind::Rook,
+        ];
+
+        for i in 0..8 {
+            inner.push(Piece::from_tile(
+                (i, 1),
+                -PI / 2.,
+                Side::Black,
+                PieceKind::Pawn,
+            ));
+            inner.push(Piece::from_tile(
+                (i, 6),
+                PI / 2.,
+                Side::White,
+                PieceKind::Pawn,
+            ));
+        }
+
+        for (i, kind) in ORDER.iter().enumerate() {
+            inner.push(Piece::from_tile((i as u8, 0), -PI / 2., Side::Black, *kind));
+            inner.push(Piece::from_tile((i as u8, 7), PI / 2., Side::White, *kind));
+        }
+
+        Self { inner }
     }
 }

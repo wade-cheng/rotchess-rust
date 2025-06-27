@@ -33,14 +33,14 @@ pub fn rotchess_icon() -> Icon {
                 .unwrap()
                 .bytes
                 .try_into()
-                .unwrap()
+                .expect("Image file should've been convertible to icon.")
         };
     }
 
     let (small, medium, big) = (
-        icon_from_path!("../assets/icon/icon_small.png"),
-        icon_from_path!("../assets/icon/icon_medium.png"),
-        icon_from_path!("../assets/icon/icon_large.png"),
+        icon_from_path!("assets/icon/icon_small.png"),
+        icon_from_path!("assets/icon/icon_medium.png"),
+        icon_from_path!("assets/icon/icon_large.png"),
     );
 
     Icon { small, medium, big }

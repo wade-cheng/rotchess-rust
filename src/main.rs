@@ -9,6 +9,7 @@ fn window_conf() -> Conf {
         window_height: 400,
         window_width: 600,
         icon: Some(icon::rotchess_icon()),
+        sample_count: 0, // remove antialiasing
         high_dpi: true,
         ..Default::default()
     }
@@ -19,7 +20,6 @@ async fn main() {
     let mut app = App::new();
 
     loop {
-        request_new_screen_size(404.8, 310.4);
         app.update();
         app.draw();
 
