@@ -60,13 +60,6 @@ impl RotchessEmulator {
         todo!()
     }
 
-    /// TEMP
-    pub fn kaboom(&mut self) {
-        let x = &mut self.turns[self.curr_turn].inner;
-        let curr = x[0].angle();
-        x[0].rotate_to(curr + 0.02);
-    }
-
     /// Create an enmulator with pieces.
     pub fn with(pieces: Pieces) -> Self {
         Self {

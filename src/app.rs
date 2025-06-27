@@ -137,7 +137,6 @@ impl App {
 
     pub fn update(&mut self) {
         self.update_runit_to_world_multiplier();
-        self.chess.kaboom();
         // egui_macroquad::ui(|ctx| {
         //     // egui::Window::new("My Window")
         //     //     .resizable(true)
