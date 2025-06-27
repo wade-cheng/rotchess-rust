@@ -1,5 +1,7 @@
 use std::f32::consts::PI;
 
+use crate::chess::emulator::Event;
+
 /// An iterable over the distances of a [`DistancesAngle`].
 ///
 /// There was an intentional choice to make this iterable just the distances,
@@ -560,16 +562,30 @@ impl Piece {
 }
 
 pub struct Pieces {
-    /// TODO: NOT PUB!!!
     pub inner: Vec<Piece>,
 }
 
 impl Pieces {
-    /// Get a piece at coords, if it exists.
+    /// Get a piece's index within inner, if it exists.
     ///
     /// A maximum of one must exist.
-    pub fn get<'a>(&self, x: f32, y: f32) -> Option<&'a Piece> {
+    pub fn get<'a>(&'a self, x: f32, y: f32) -> Option<(&'a Piece, usize)> {
+        return self.inner.get(0).map(|p| (p, 1));
         todo!()
+    }
+
+    pub fn handle_event(&mut self, e: Event) {
+        match e {
+            Event::Drag { x, y, button } => {
+                // println!("dragged: {} {}", x, y);
+            }
+            Event::ButtonDown { x, y, button } => {
+                // println!("down: {} {}", x, y);
+            }
+            Event::ButtonUp { x, y, button } => {
+                // println!("up: {} {}", x, y);
+            }
+        }
     }
 
     pub fn pieces(&self) -> &[Piece] {

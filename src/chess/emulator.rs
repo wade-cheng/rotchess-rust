@@ -14,12 +14,14 @@ use crate::chess::piece::{Piece, Pieces};
 /// Mouse buttons a chess board can respond to.
 ///
 /// This enum may add new variants.
+#[derive(Clone, Copy)]
 pub enum MouseButton {
     LEFT,
     RIGHT,
 }
 
 /// User events a chess board can respond to.
+#[derive(Clone, Copy)]
 pub enum Event {
     ButtonDown { x: f32, y: f32, button: MouseButton },
     ButtonUp { x: f32, y: f32, button: MouseButton },
@@ -46,10 +48,10 @@ pub struct RotchessEmulator {
     travelpoints_buffer: Vec<TravelPoint>,
     /// Whether a piece is selected.
     ///
-    /// If `Some(sel_i, tp_i)`, then `turns[curr_turn].inner[sel_i]` is the selected piece.
-    /// Additionally, `travelpoints_buffer[tp_i]` is the travel points that that piece
+    /// If `Some(sel_i)`, then `turns[curr_turn].inner[sel_i]` is the selected piece.
+    /// Additionally, `travelpoints_buffer` is the travel points that that piece
     /// has access to.
-    selected: Option<(usize, usize)>,
+    selected: Option<usize>,
     turns: Vec<Pieces>,
 }
 
@@ -83,17 +85,32 @@ impl RotchessEmulator {
     /// 1. captures
     /// 1. piece selection
     /// 1. moves
-    pub fn handle_event(e: Event) {
+    pub fn handle_event(&mut self, e: Event) {
+        self.turns[self.curr_turn].handle_event(e);
         match e {
             Event::Drag { x, y, button } => {
-                todo!()
+                // println!("dragged: {} {}", x, y);
             }
-            Event::ButtonDown { x, y, button } => {
-                todo!()
+            Event::ButtonDown {
+                x,
+                y,
+                button: MouseButton::LEFT,
+            } => {
+                let pieces = &self.turns[self.curr_turn];
+                let p = pieces.get(x, y);
+                if let (Some((p, p_i)), Some(curr_sel_i)) = (p, self.selected) {
+                    if p_i == curr_sel_i {
+                        // we clicked on the already-selected piece.
+                        self.selected = None;
+                    } else {
+                        self.selected = Some(p_i)
+                    }
+                }
             }
             Event::ButtonUp { x, y, button } => {
-                todo!()
+                // println!("up: {} {}", x, y);
             }
+            _ => {}
         }
     }
 }
@@ -102,5 +119,17 @@ impl RotchessEmulator {
 impl RotchessEmulator {
     pub fn pieces(&self) -> &[Piece] {
         self.turns[self.curr_turn].pieces()
+    }
+
+    /// Whether there is a selected piece.
+    ///
+    /// If Some, it contains the piece and its possible travelpoints.
+    pub fn selected(&self) -> Option<(&Piece, &[TravelPoint])> {
+        self.selected.map(|sel_i| {
+            (
+                &self.turns[self.curr_turn].inner[sel_i],
+                self.travelpoints_buffer.as_slice(),
+            )
+        })
     }
 }

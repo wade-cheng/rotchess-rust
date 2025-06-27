@@ -4,7 +4,8 @@ use macroquad::prelude::*;
 
 use crate::chess::{
     RotchessEmulator,
-    piece::{PIECE_RADIUS, Pieces},
+    emulator::{self, Event},
+    piece::{PIECE_RADIUS, Piece, Pieces},
 };
 
 const DARK_TILE_COLOR: Color = Color::from_rgba(181, 136, 99, 255);
@@ -23,6 +24,7 @@ pub struct App {
     chess: RotchessEmulator,
     runit_to_world_multiplier: f32,
     images: HashMap<String, Texture2D>,
+    dragging: bool,
 }
 
 impl App {
@@ -121,6 +123,7 @@ impl App {
             chess: RotchessEmulator::with(Pieces::standard_board()),
             runit_to_world_multiplier: 0.,
             images: App::generate_images(),
+            dragging: false,
         }
     }
 
@@ -137,6 +140,35 @@ impl App {
 
     pub fn update(&mut self) {
         self.update_runit_to_world_multiplier();
+        let (mouse_x, mouse_y) = mouse_position();
+
+        if is_mouse_button_pressed(MouseButton::Left) {
+            self.chess.handle_event(Event::ButtonDown {
+                x: mouse_x,
+                y: mouse_y,
+                button: emulator::MouseButton::LEFT,
+            });
+
+            self.dragging = true;
+        }
+
+        if is_mouse_button_released(MouseButton::Left) {
+            self.chess.handle_event(Event::ButtonUp {
+                x: mouse_x,
+                y: mouse_y,
+                button: emulator::MouseButton::LEFT,
+            });
+
+            self.dragging = false;
+        }
+
+        if self.dragging && mouse_delta_position() != Vec2::ZERO {
+            self.chess.handle_event(Event::Drag {
+                x: mouse_x,
+                y: mouse_y,
+                button: emulator::MouseButton::LEFT,
+            });
+        }
         // egui_macroquad::ui(|ctx| {
         //     // egui::Window::new("My Window")
         //     //     .resizable(true)
@@ -172,7 +204,26 @@ impl App {
         }
     }
 
-    fn draw_pieces(&self) {
+    fn draw_piece_outline(&self, piece: &Piece, color: Color) {
+        draw_circle_lines(
+            self.cnv(piece.x()),
+            self.cnv(piece.y()),
+            self.cnv(PIECE_RADIUS),
+            1.,
+            color,
+        );
+    }
+
+    fn draw_piece_highlight(&self, piece: &Piece, color: Color) {
+        draw_circle(
+            self.cnv(piece.x()),
+            self.cnv(piece.y()),
+            self.cnv(PIECE_RADIUS),
+            color,
+        );
+    }
+
+    fn draw_pieces(&self, show_hitcircles: bool) {
         /// Size as fraction of 1.
         const PIECE_SIZE: f32 = 0.9;
         for piece in self.chess.pieces() {
@@ -197,13 +248,10 @@ impl App {
                     ..Default::default()
                 },
             );
-            // draw_circle_lines(
-            //     self.cnv(piece.x()),
-            //     self.cnv(piece.y()),
-            //     self.cnv(PIECE_RADIUS),
-            //     1.,
-            //     HITCIRCLE_COLOR,
-            // );
+
+            if show_hitcircles {
+                self.draw_piece_highlight(piece, HITCIRCLE_COLOR);
+            }
         }
     }
 
@@ -211,7 +259,13 @@ impl App {
         clear_background(BACKGROUND_COLOR);
         self.draw_board();
 
+        let selected = self.chess.selected();
+
         // egui_macroquad::draw();
-        self.draw_pieces();
+        self.draw_pieces(selected.is_some());
+
+        if let Some((piece, travelpoints)) = selected {
+            // todo!()
+        }
     }
 }
