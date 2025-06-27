@@ -377,8 +377,8 @@ impl std::fmt::Display for Piece {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Piece(x={}, y={}, side={:?})",
-            self.core.center.0, self.core.center.1, self.core.side
+            "Piece(x={}, y={}, side={:?}), kind={:?}",
+            self.core.center.0, self.core.center.1, self.core.side, self.core.kind
         )
     }
 }
@@ -569,23 +569,8 @@ impl Pieces {
     /// Get a piece's index within inner, if it exists.
     ///
     /// A maximum of one must exist.
-    pub fn get<'a>(&'a self, x: f32, y: f32) -> Option<(&'a Piece, usize)> {
-        return self.inner.get(0).map(|p| (p, 1));
-        todo!()
-    }
-
-    pub fn handle_event(&mut self, e: Event) {
-        match e {
-            Event::Drag { x, y, button } => {
-                // println!("dragged: {} {}", x, y);
-            }
-            Event::ButtonDown { x, y, button } => {
-                // println!("down: {} {}", x, y);
-            }
-            Event::ButtonUp { x, y, button } => {
-                // println!("up: {} {}", x, y);
-            }
-        }
+    pub fn get<'a>(&'a self, x: f32, y: f32) -> Option<usize> {
+        self.inner.iter().position(|piece| piece.collidepoint(x, y))
     }
 
     pub fn pieces(&self) -> &[Piece] {

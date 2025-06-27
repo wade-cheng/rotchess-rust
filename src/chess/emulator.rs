@@ -86,25 +86,25 @@ impl RotchessEmulator {
     /// 1. piece selection
     /// 1. moves
     pub fn handle_event(&mut self, e: Event) {
-        self.turns[self.curr_turn].handle_event(e);
         match e {
             Event::Drag { x, y, button } => {
                 // println!("dragged: {} {}", x, y);
             }
-            Event::ButtonDown {
-                x,
-                y,
-                button: MouseButton::LEFT,
-            } => {
+            Event::ButtonDown { x, y, button } => {
                 let pieces = &self.turns[self.curr_turn];
-                let p = pieces.get(x, y);
-                if let (Some((p, p_i)), Some(curr_sel_i)) = (p, self.selected) {
-                    if p_i == curr_sel_i {
-                        // we clicked on the already-selected piece.
-                        self.selected = None;
-                    } else {
-                        self.selected = Some(p_i)
+                let idx_of_piece_at_xy = pieces.get(x, y);
+                // println!("{}", idx_of_piece_at_xy.is_some());
+                match (idx_of_piece_at_xy, self.selected) {
+                    (Some(new_i), Some(curr_sel_i)) => {
+                        if new_i == curr_sel_i {
+                            // we clicked on the already-selected piece.
+                            self.selected = None;
+                        } else {
+                            self.selected = Some(new_i)
+                        }
                     }
+                    (Some(new_i), None) => self.selected = Some(new_i),
+                    _ => {}
                 }
             }
             Event::ButtonUp { x, y, button } => {

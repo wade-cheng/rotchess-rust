@@ -10,7 +10,7 @@ fn window_conf() -> Conf {
         window_width: 600,
         icon: Some(icon::rotchess_icon()),
         sample_count: 0, // remove antialiasing
-        // high_dpi: true,
+        high_dpi: true,
         ..Default::default()
     }
 }

@@ -12,7 +12,7 @@ const DARK_TILE_COLOR: Color = Color::from_rgba(181, 136, 99, 255);
 const BACKGROUND_COLOR: Color = Color::from_rgba(240, 217, 181, 255);
 
 /// yellowish
-const SELECTED_PIECE_COLOR: Color = Color::from_rgba(255, 255, 153, 255);
+const SELECTED_PIECE_COLOR: Color = Color::from_rgba(255, 255, 153, 200);
 /// cyanish
 const MOVE_POINT_COLOR: Color = Color::from_rgba(173, 255, 244, 255);
 /// red
@@ -134,13 +134,21 @@ impl App {
     /// Converts from a rotchess unit to world unit (pixel).
     ///
     /// Must be run after we update the ratio after any screen resize, else the value is outdated.
-    fn cnv(&self, a: f32) -> f32 {
+    fn cnv_r(&self, a: f32) -> f32 {
         self.runit_to_world_multiplier * a
+    }
+
+    /// Converts from a world unit (pixel) to rotchess unit.
+    ///
+    /// Must be run after we update the ratio after any screen resize, else the value is outdated.
+    fn cnv_w(&self, a: f32) -> f32 {
+        a / self.runit_to_world_multiplier
     }
 
     pub fn update(&mut self) {
         self.update_runit_to_world_multiplier();
-        let (mouse_x, mouse_y) = mouse_position();
+        let (pixel_mouse_x, pixel_mouse_y) = mouse_position();
+        let (mouse_x, mouse_y) = (self.cnv_w(pixel_mouse_x), self.cnv_w(pixel_mouse_y));
 
         if is_mouse_button_pressed(MouseButton::Left) {
             self.chess.handle_event(Event::ButtonDown {
@@ -188,10 +196,10 @@ impl App {
 
         for _ in 0..NUM_DARK_TILES {
             draw_rectangle(
-                self.cnv(left as f32),
-                self.cnv(top as f32),
-                self.cnv(1.),
-                self.cnv(1.),
+                self.cnv_r(left as f32),
+                self.cnv_r(top as f32),
+                self.cnv_r(1.),
+                self.cnv_r(1.),
                 DARK_TILE_COLOR,
             );
 
@@ -206,19 +214,25 @@ impl App {
 
     fn draw_piece_outline(&self, piece: &Piece, color: Color) {
         draw_circle_lines(
-            self.cnv(piece.x()),
-            self.cnv(piece.y()),
-            self.cnv(PIECE_RADIUS),
+            self.cnv_r(piece.x()),
+            self.cnv_r(piece.y()),
+            self.cnv_r(PIECE_RADIUS),
             1.,
             color,
         );
     }
 
     fn draw_piece_highlight(&self, piece: &Piece, color: Color) {
+        /// Extra addition to the radius of the drawn circle.
+        ///
+        /// When highlighting a piece, there will be an outline over it. Without
+        /// extra tolerance, there will be background poking in between the highlight
+        /// and outline.
+        const TOLERANCE: f32 = 0.5;
         draw_circle(
-            self.cnv(piece.x()),
-            self.cnv(piece.y()),
-            self.cnv(PIECE_RADIUS),
+            self.cnv_r(piece.x()),
+            self.cnv_r(piece.y()),
+            self.cnv_r(PIECE_RADIUS) + TOLERANCE,
             color,
         );
     }
@@ -236,13 +250,13 @@ impl App {
                         piece.side().to_file_desc()
                     ))
                     .expect("Pieces should correctly map to the file descrs."),
-                self.cnv(piece.x() - PIECE_SIZE / 2.),
-                self.cnv(piece.y() - PIECE_SIZE / 2.),
+                self.cnv_r(piece.x() - PIECE_SIZE / 2.),
+                self.cnv_r(piece.y() - PIECE_SIZE / 2.),
                 WHITE,
                 DrawTextureParams {
                     dest_size: Some(Vec2 {
-                        x: self.cnv(PIECE_SIZE),
-                        y: self.cnv(PIECE_SIZE),
+                        x: self.cnv_r(PIECE_SIZE),
+                        y: self.cnv_r(PIECE_SIZE),
                     }),
                     rotation: piece.angle() - PI / 2.,
                     ..Default::default()
@@ -250,7 +264,7 @@ impl App {
             );
 
             if show_hitcircles {
-                self.draw_piece_highlight(piece, HITCIRCLE_COLOR);
+                self.draw_piece_outline(piece, HITCIRCLE_COLOR);
             }
         }
     }
@@ -260,6 +274,10 @@ impl App {
         self.draw_board();
 
         let selected = self.chess.selected();
+
+        if let Some((piece, _)) = selected {
+            self.draw_piece_highlight(piece, SELECTED_PIECE_COLOR);
+        }
 
         // egui_macroquad::draw();
         self.draw_pieces(selected.is_some());
