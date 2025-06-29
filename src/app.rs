@@ -1,3 +1,5 @@
+//! An app that lets users play and see (update/draw) chess, computed with help from [`crate::chess`] and macroquad.
+
 use std::{collections::HashMap, f32::consts::PI};
 
 use macroquad::prelude::*;
