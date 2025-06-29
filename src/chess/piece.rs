@@ -1,6 +1,6 @@
-use std::f32::consts::PI;
+use std::{collections::HashSet, f32::consts::PI, hash::Hash};
 
-use crate::chess::emulator::Event;
+use crate::chess::emulator::TravelKind;
 
 /// An iterable over the distances of a [`DistancesAngle`].
 ///
@@ -45,10 +45,10 @@ struct DistancesAngle {
     start: f32,
     step: f32,
     inclusive_upper_bound: f32,
-    /// Angle of travel in radians.
+    /// Used as a piece's angle *offset*.
     ///
-    /// Direction is fnined in the standard math sense, with 0 at the positive
-    /// x-axis, increasing clockwise.
+    /// An angle of 0 means the piece is facing "forward." This means it has an actual
+    /// angle of who knows what.
     angle: f32,
 }
 
@@ -67,7 +67,7 @@ impl IntoIterator for DistancesAngle {
 }
 
 impl DistancesAngle {
-    pub const fn singleton(distance: f32, angle: f32) -> Self {
+    const fn singleton(distance: f32, angle: f32) -> Self {
         Self {
             start: distance,
             step: 1.,
@@ -86,7 +86,7 @@ impl DistancesAngle {
     ///
     /// assert_eq![n as usize, da.into_iter().collect::<Vec<f32>>().len()];
     /// ```
-    pub const fn repeated(start: f32, step: f32, n: i32, angle: f32) -> Self {
+    const fn repeated(start: f32, step: f32, n: i32, angle: f32) -> Self {
         Self {
             start,
             step,
@@ -95,7 +95,7 @@ impl DistancesAngle {
         }
     }
 
-    pub const fn range(start: f32, step: f32, inclusive_upper_bound: f32, angle: f32) -> Self {
+    const fn range(start: f32, step: f32, inclusive_upper_bound: f32, angle: f32) -> Self {
         Self {
             start,
             step,
@@ -107,7 +107,7 @@ impl DistancesAngle {
 
 impl DistancesAngle {
     /// Get the point offsets when a piece rotated by angle applies this DistancesAngle.
-    pub fn get_offsets(&self, angle: f32) -> impl Iterator<Item = (f32, f32)> {
+    fn get_offsets(&self, angle: f32) -> impl Iterator<Item = (f32, f32)> {
         self.clone()
             .into_iter()
             .map(move |d| self.get_point(d, self.angle, angle))
@@ -163,118 +163,6 @@ impl PieceKind {
     }
 }
 
-// pub fn __init_movement(&self):
-//     """initializes DAs"""
-//     if self.__piece_name == "pawn":
-//         self.__move_DAs.append(
-//             DistsAngle(
-//                 [50, 100],
-//                 angle=math.pi / -2,
-//             )
-//         )
-//         self.__capture_DAs.append(
-//             DistsAngle(
-//                 [50 * math.sqrt(2)],
-//                 angle=3 * math.pi / -4,
-//             )
-//         )
-//         self.__capture_DAs.append(
-//             DistsAngle(
-//                 [50 * math.sqrt(2)],
-//                 angle=math.pi / -4,
-//             )
-//         )
-//     elif self.__piece_name == "rook":
-//         self.include_level_DAs()
-//     elif self.__piece_name == "knight":
-//         for rad in [
-//             0.4636476090008061,
-//             -0.4636476090008061,
-//             -1.1071487177940904,
-//             -2.0344439357957027,
-//             -2.677945044588987,
-//             2.677945044588987,
-//             2.0344439357957027,
-//             1.1071487177940904,
-//         ]:
-//             self.__capture_DAs.append(
-//                 DistsAngle(
-//                     [math.sqrt(50**2 + 100**2)],
-//                     angle=rad,
-//                 )
-//             )
-//         self.__move_DAs = self.__capture_DAs
-//     elif self.__piece_name == "bishop":
-//         self.include_diagonal_DAs()
-//     elif self.__piece_name == "queen":
-//         self.include_level_DAs()
-//         self.include_diagonal_DAs()
-//     elif self.__piece_name == "king":
-//         for rad in [math.pi / -2, 0, math.pi / 2, math.pi, 3 * math.pi / 2]:
-//             self.__capture_DAs.append(
-//                 DistsAngle(
-//                     [50],
-//                     angle=rad,
-//                 )
-//             )
-//         for rad in [math.pi / -2, 0, math.pi / 2, math.pi, 3 * math.pi / 2]:
-//             rad = rad + math.pi / 4
-//             self.__capture_DAs.append(
-//                 DistsAngle(
-//                     [math.sqrt(50**2 + 50**2)],
-//                     angle=rad,
-//                 )
-//             )
-//         self.__move_DAs = self.__capture_DAs
-//     else:
-//         raise Exception(
-//             f"no distances angle mapping found for piece name: {self.__piece_name}"
-//         )
-
-// pub fn include_diagonal_DAs(&self):
-//     """appends the base moveset for a bishop to self's DistsAngles"""
-//     self.__capture_DAs.append(
-//         DistsAngle(
-//             itertools.count(start=50 * math.sqrt(2), step=50 * math.sqrt(2)),
-//             angle=math.pi / 4,
-//         )
-//     )
-//     self.__capture_DAs.append(
-//         DistsAngle(
-//             itertools.count(start=-50 * math.sqrt(2), step=-50 * math.sqrt(2)),
-//             angle=math.pi / 4,
-//         )
-//     )
-//     self.__capture_DAs.append(
-//         DistsAngle(
-//             itertools.count(start=50 * math.sqrt(2), step=50 * math.sqrt(2)),
-//             angle=math.pi / -4,
-//         )
-//     )
-//     self.__capture_DAs.append(
-//         DistsAngle(
-//             itertools.count(start=-50 * math.sqrt(2), step=-50 * math.sqrt(2)),
-//             angle=math.pi / -4,
-//         )
-//     )
-//     self.__move_DAs = self.__capture_DAs
-
-// pub fn include_level_DAs(&self):
-//     """appends the base moveset for a rook to self's DistsAngles"""
-//     self.__capture_DAs.append(
-//         DistsAngle(itertools.count(start=50, step=50), angle=0)
-//     )
-//     self.__capture_DAs.append(
-//         DistsAngle(itertools.count(start=-50, step=-50), angle=0)
-//     )
-//     self.__capture_DAs.append(
-//         DistsAngle(itertools.count(start=50, step=50), angle=math.pi / 2)
-//     )
-//     self.__capture_DAs.append(
-//         DistsAngle(itertools.count(start=-50, step=-50), angle=math.pi / 2)
-//     )
-//     self.__move_DAs = self.__capture_DAs
-
 impl PieceKind {
     pub fn can_jump(&self) -> bool {
         match self {
@@ -287,20 +175,107 @@ impl PieceKind {
         }
     }
 
-    pub fn get_capture_das(&self) -> Vec<DistancesAngle> {
-        todo!()
-    }
-
-    pub fn get_move_das(&self) -> Vec<DistancesAngle> {
-        todo!()
-    }
-
     pub fn can_promote(&self) -> bool {
         if *self == PieceKind::Pawn {
             true
         } else {
             false
         }
+    }
+
+    /// Add the DAs of a rook to `v`.
+    fn add_level_das(v: &mut Vec<DistancesAngle>) {
+        for i in 0..4 {
+            v.push(DistancesAngle::range(
+                1.,
+                1.,
+                f32::INFINITY,
+                i as f32 * PI / 2.,
+            ))
+        }
+    }
+
+    /// From distance formula with 1 and 2.
+    const KNIGHT_DISTANCE: f32 = 2.23606797749979;
+
+    const KNIGHT_ANGLES: [f32; 8] = [
+        0.4636476090008061,
+        -0.4636476090008061,
+        -1.1071487177940904,
+        -2.0344439357957027,
+        -2.677945044588987,
+        2.677945044588987,
+        2.0344439357957027,
+        1.1071487177940904,
+    ];
+
+    /// Add the DAs of a bishop to `v`.
+    fn add_diag_das(v: &mut Vec<DistancesAngle>) {
+        for i in 0..4 {
+            v.push(DistancesAngle::range(
+                f32::sqrt(2.),
+                f32::sqrt(2.),
+                f32::INFINITY,
+                (i as f32 * PI / 2.) + (PI / 4.),
+            ))
+        }
+    }
+
+    fn get_capture_das(&self) -> Vec<DistancesAngle> {
+        let mut ans = vec![];
+        match self {
+            PieceKind::Pawn => {
+                ans.push(DistancesAngle::singleton(f32::sqrt(2.), PI / 4.));
+                ans.push(DistancesAngle::singleton(f32::sqrt(2.), 3. * PI / 4.));
+            }
+            PieceKind::King => {
+                for i in 0..8 {
+                    ans.push(DistancesAngle::singleton(
+                        if i % 2 == 0 { 1. } else { f32::sqrt(2.) },
+                        i as f32 * PI / 4.,
+                    ))
+                }
+            }
+            PieceKind::Knight => {
+                for rad in PieceKind::KNIGHT_ANGLES {
+                    ans.push(DistancesAngle::singleton(PieceKind::KNIGHT_DISTANCE, rad));
+                }
+            }
+            PieceKind::Rook => PieceKind::add_level_das(&mut ans),
+            PieceKind::Bishop => PieceKind::add_diag_das(&mut ans),
+            PieceKind::Queen => {
+                PieceKind::add_level_das(&mut ans);
+                PieceKind::add_diag_das(&mut ans);
+            }
+        };
+        ans
+    }
+
+    fn get_move_das(&self) -> Vec<DistancesAngle> {
+        let mut ans = vec![];
+        match self {
+            PieceKind::Pawn => ans.push(DistancesAngle::repeated(1., 1., 2, PI / 2.)),
+            PieceKind::King => {
+                for i in 0..8 {
+                    ans.push(DistancesAngle::singleton(
+                        if i % 2 == 0 { 1. } else { f32::sqrt(2.) },
+                        i as f32 * PI / 4.,
+                    ))
+                }
+            }
+            PieceKind::Knight => {
+                for rad in PieceKind::KNIGHT_ANGLES {
+                    ans.push(DistancesAngle::singleton(PieceKind::KNIGHT_DISTANCE, rad));
+                }
+            }
+            PieceKind::Rook => PieceKind::add_level_das(&mut ans),
+            PieceKind::Bishop => PieceKind::add_diag_das(&mut ans),
+            PieceKind::Queen => {
+                PieceKind::add_level_das(&mut ans);
+                PieceKind::add_diag_das(&mut ans);
+            }
+        };
+        ans
     }
 }
 
@@ -323,6 +298,20 @@ struct CorePieceData {
     kind: PieceKind,
 }
 
+impl Hash for CorePieceData {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.center.0.to_be_bytes().hash(state);
+        self.center.1.to_be_bytes().hash(state);
+    }
+}
+
+impl PartialEq for CorePieceData {
+    fn eq(&self, other: &Self) -> bool {
+        self.center == other.center
+    }
+}
+impl Eq for CorePieceData {}
+
 /// Delayable piece data.
 ///
 /// Some piece data will only be created (un-None'd) when the piece is first moved.
@@ -340,8 +329,11 @@ struct SecondaryPieceData {
 }
 
 impl From<&CorePieceData> for SecondaryPieceData {
-    fn from(value: &CorePieceData) -> Self {
-        todo!()
+    fn from(core: &CorePieceData) -> Self {
+        Self {
+            capture_das: core.kind.get_capture_das(),
+            move_das: core.kind.get_move_das(),
+        }
     }
 }
 
@@ -352,17 +344,16 @@ struct TertiaryPieceData {
     move_points: Vec<(f32, f32)>,
 }
 
-/// Piece data useful for drawing a game.
-///
-/// This is any data that is not technically necessary for rotchess, but is
-/// helpful for a rotchess drawer to know.
-struct GamePieceData {
-    selected: bool,
-}
-
 impl From<(&CorePieceData, &SecondaryPieceData)> for TertiaryPieceData {
-    fn from((core, secondary): (&CorePieceData, &SecondaryPieceData)) -> Self {
-        todo!()
+    fn from((core, sec): (&CorePieceData, &SecondaryPieceData)) -> Self {
+        let mut capture_points = vec![];
+        let mut move_points = vec![];
+        Piece::extend_with_drawable_points(&core, &mut capture_points, sec.capture_das.iter());
+        Piece::extend_with_drawable_points(&core, &mut move_points, sec.move_das.iter());
+        Self {
+            capture_points,
+            move_points,
+        }
     }
 }
 
@@ -370,7 +361,6 @@ pub struct Piece {
     core: CorePieceData,
     secondary: Option<SecondaryPieceData>,
     tertiary: Option<TertiaryPieceData>,
-    game: GamePieceData,
 }
 
 impl std::fmt::Display for Piece {
@@ -383,7 +373,20 @@ impl std::fmt::Display for Piece {
     }
 }
 
-/// Basic piece stuff.
+impl Hash for Piece {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.core.hash(state);
+    }
+}
+
+impl PartialEq for Piece {
+    fn eq(&self, other: &Self) -> bool {
+        self.core == other.core
+    }
+}
+impl Eq for Piece {}
+
+/// Instantiation.
 impl Piece {
     pub fn new(center: (f32, f32), angle: f32, side: Side, kind: PieceKind) -> Self {
         Self {
@@ -395,7 +398,6 @@ impl Piece {
             },
             secondary: None,
             tertiary: None,
-            game: GamePieceData { selected: false },
         }
     }
 
@@ -411,21 +413,12 @@ impl Piece {
             },
             secondary: None,
             tertiary: None,
-            game: GamePieceData { selected: false },
         }
     }
+}
 
-    pub fn collidepoint(&self, x: f32, y: f32) -> bool {
-        (x - self.core.center.0).powf(2.) + (y - self.core.center.1).powf(2.)
-            < PIECE_RADIUS.powf(2.)
-    }
-
-    /// Whether a piece with center (x, y) collides with self.
-    pub fn collidepiece(&self, x: f32, y: f32) -> bool {
-        ((x - self.core.center.0).powf(2.) + (y - self.core.center.1).powf(2.))
-            < (PIECE_RADIUS * 2.).powf(2.)
-    }
-
+/// Trivial getters and setters.
+impl Piece {
     pub fn center(&self) -> (f32, f32) {
         self.core.center
     }
@@ -434,15 +427,23 @@ impl Piece {
         return self.core.center.0;
     }
 
+    pub fn set_x(&mut self, x: f32) {
+        self.core.center.0 = x;
+    }
+
     pub fn y(&self) -> f32 {
         return self.core.center.1;
+    }
+
+    pub fn set_y(&mut self, x: f32) {
+        self.core.center.1 = x;
     }
 
     pub fn angle(&self) -> f32 {
         return self.core.angle;
     }
 
-    pub fn rotate_to(&mut self, angle: f32) {
+    pub fn set_angle(&mut self, angle: f32) {
         self.core.angle = angle;
     }
 
@@ -451,12 +452,30 @@ impl Piece {
     }
 
     pub fn kind(&self) -> PieceKind {
-        return self.core.kind;
+        self.core.kind
+    }
+
+    pub fn needs_init(&self) -> bool {
+        self.secondary.is_none() || self.tertiary.is_none()
     }
 }
 
 /// Nontrivial piece stuff.
 impl Piece {
+    pub fn collidepoint_generic(x1: f32, y1: f32, x2: f32, y2: f32) -> bool {
+        (x1 - x2).powi(2) + (y1 - y2).powi(2) < PIECE_RADIUS.powi(2)
+    }
+
+    pub fn collidepoint(&self, x: f32, y: f32) -> bool {
+        Piece::collidepoint_generic(x, y, self.core.center.0, self.core.center.1)
+    }
+
+    /// Whether a piece with center (x, y) collides with self.
+    pub fn collidepiece(&self, x: f32, y: f32) -> bool {
+        ((x - self.core.center.0).powi(2) + (y - self.core.center.1).powi(2))
+            < (PIECE_RADIUS * 2.).powi(2)
+    }
+
     /// Whether a piece with center (x, y) is on the board.
     ///
     /// TODO: this probably should be in a board struct. we might want to move Pieces and Board into the same struct?
@@ -480,8 +499,9 @@ impl Piece {
         }
     }
 
-    /// strictly just moves self to x,y and updates self invariants.
-    /// doesn't even check for promotion---should be done in Pieces.move().
+    /// Naively moves self to x,y and updates self invariants.
+    ///
+    /// Doesn't even check for promotion---should be done in Pieces.try_move() or something.
     fn move_to(&mut self, x: f32, y: f32) {
         println!(
             "moving {:?} xy {}, {} to xy {}, {}",
@@ -500,16 +520,22 @@ impl Piece {
         }
     }
 
-    pub fn movable_points_unchecked(&self) -> impl Iterator<Item = &(f32, f32)> {
+    pub fn capture_points_unchecked(&self) -> impl Iterator<Item = &(f32, f32)> {
         let tertiary = self
             .tertiary
             .as_ref()
             .expect("Invariant was that delayed is Some.");
 
-        tertiary
-            .capture_points
-            .iter()
-            .chain(tertiary.move_points.iter())
+        tertiary.capture_points.iter()
+    }
+
+    pub fn move_points_unchecked(&self) -> impl Iterator<Item = &(f32, f32)> {
+        let tertiary = self
+            .tertiary
+            .as_ref()
+            .expect("Invariant was that delayed is Some.");
+
+        tertiary.move_points.iter()
     }
 
     pub fn init_auxiliary_data(&mut self) {
@@ -521,7 +547,7 @@ impl Piece {
     }
 
     /// Update self's capture points with the drawable DistancesAngles.
-    fn update_capture_points_unchecked(&mut self) {
+    pub fn update_capture_points_unchecked(&mut self) {
         let capture_points: &mut Vec<(f32, f32)> =
             &mut self.tertiary.as_mut().expect("Invariant.").capture_points;
         let capture_das: &Vec<DistancesAngle> =
@@ -532,7 +558,7 @@ impl Piece {
     }
 
     /// Update self's move points with the drawable DistancesAngles.
-    fn update_move_points_unchecked(&mut self) {
+    pub fn update_move_points_unchecked(&mut self) {
         let move_points: &mut Vec<(f32, f32)> =
             &mut self.tertiary.as_mut().expect("Invariant.").move_points;
         let move_das: &Vec<DistancesAngle> = &self.secondary.as_ref().expect("Invariant.").move_das;
@@ -544,13 +570,18 @@ impl Piece {
     /// Extend points with the drawable points from each DA in das.
     ///
     /// Necessary metadata like offset angle and piece center is retrieved from self.
+    ///
+    /// This function blocks, and will become an infinite loop if some idiot (me) manages to
+    /// define a chess piece that moves infinitely without leaving the board. An error
+    /// arising from this should become pretty obvious. "Oh, hey, I just added Mr. moves
+    /// around in circles, and for some reason my game freezes whenever I try to use him."
     fn extend_with_drawable_points<'a>(
         core: &CorePieceData,
         points: &mut Vec<(f32, f32)>,
         das: impl Iterator<Item = &'a DistancesAngle>,
     ) {
         for da in das {
-            for (x, y) in da.get_offsets(core.angle) {
+            for (x, y) in da.get_offsets(core.angle + PI / 2.) {
                 let point = (x + core.center.0, y + core.center.1);
                 if !Piece::on_board(point.0, point.1) {
                     break;
@@ -561,6 +592,41 @@ impl Piece {
     }
 }
 
+/// The scalar composition of vectors point in the direction of dir where the vectors have starting point start
+fn scalar_comp(
+    start_x: f32,
+    start_y: f32,
+    point_x: f32,
+    point_y: f32,
+    dir_x: f32,
+    dir_y: f32,
+) -> f32 {
+    // scalar comp of v in the direction of u: we find u dot v / magn(u)
+    let u = (dir_x - start_x, dir_y - start_y);
+    let v = (point_x - start_x, point_y - start_y);
+
+    (u.0 * v.0 + u.1 * v.1) / f32::sqrt(u.0.powi(2) + u.1.powi(2))
+}
+
+/// simple distance formula + hitcirclerad
+///
+/// might be made into Piece const? this is legacy code.
+fn max_hit_distance(start_x: f32, start_y: f32, end_x: f32, end_y: f32) -> f32 {
+    f32::sqrt((start_x - end_x).powi(2) + (start_y - end_y).powi(2)) + PIECE_RADIUS
+}
+
+/// distance from a point to a line, where the line is given by two points
+fn point_to_line_dist(
+    start_x: f32,
+    start_y: f32,
+    end_x: f32,
+    end_y: f32,
+    point_x: f32,
+    point_y: f32,
+) -> f32 {
+    f32::abs((end_x - start_x) * (point_y - start_y) - (point_x - start_x) * (end_y - start_y))
+        / f32::sqrt((end_x - start_x).powi(2) + (end_y - start_y).powi(2))
+}
 pub struct Pieces {
     pub inner: Vec<Piece>,
 }
@@ -575,6 +641,85 @@ impl Pieces {
 
     pub fn pieces(&self) -> &[Piece] {
         &self.inner
+    }
+
+    /// Move the piece at idx to x, y.
+    pub fn travel(&mut self, idx: usize, x: f32, y: f32) {
+        self.inner.retain(|piece| !piece.collidepiece(x, y));
+
+        self.inner[idx].set_x(x);
+        self.inner[idx].set_y(y);
+    }
+
+    pub fn travelable(&self, piece: &Piece, x: f32, y: f32, kind: TravelKind) -> bool {
+        println!("checking travelable points");
+        let mut pieces_overlapping_endpoint = HashSet::new();
+
+        // disallow capturing own side. also find which pieces overlap the endpoint
+        for other_piece in &self.inner {
+            if other_piece == piece {
+                debug_assert!(!piece.needs_init());
+                continue;
+            }
+
+            if other_piece.collidepoint(x, y) {
+                pieces_overlapping_endpoint.insert(other_piece);
+
+                if other_piece.side() == piece.side() {
+                    return false;
+                }
+            }
+        }
+
+        if piece.core.kind.can_jump() {
+            match kind {
+                TravelKind::Capture => {
+                    if pieces_overlapping_endpoint.len() > 0 {
+                        return true;
+                    }
+                }
+                TravelKind::Move => return true,
+            };
+        }
+
+        let mut in_the_way = 0;
+        for other_piece in &self.inner {
+            if other_piece == piece {
+                continue;
+            }
+
+            let comp = scalar_comp(piece.x(), piece.y(), other_piece.x(), other_piece.y(), x, y);
+            if 0. < comp && comp < max_hit_distance(piece.x(), piece.y(), x, y) {
+                // piece is within correct distance to block. now check:
+                if point_to_line_dist(piece.x(), piece.y(), x, y, other_piece.x(), other_piece.y())
+                    < 2. * PIECE_RADIUS
+                {
+                    // piece is within correct point to line distance to block. we may be blocked unless we can capture this piece.
+                    println!("a {:?} can block", other_piece.kind());
+                    if !pieces_overlapping_endpoint.contains(&other_piece) {
+                        in_the_way += 1;
+                    }
+                }
+            }
+        }
+
+        println!(
+            "inway: {in_the_way}, overlaps: {}",
+            pieces_overlapping_endpoint.len()
+        );
+        if in_the_way > 0 {
+            return false;
+        }
+
+        debug_assert!(
+            pieces_overlapping_endpoint
+                .iter()
+                .all(|other_piece| other_piece.side() != piece.side())
+        );
+        match kind {
+            TravelKind::Capture => pieces_overlapping_endpoint.len() > 0,
+            TravelKind::Move => true,
+        }
     }
 
     pub fn standard_board() -> Self {

@@ -4,7 +4,7 @@ use macroquad::prelude::*;
 
 use crate::chess::{
     RotchessEmulator,
-    emulator::{self, Event},
+    emulator::{self, Event, TravelKind, TravelPoint},
     piece::{PIECE_RADIUS, Piece, Pieces},
 };
 
@@ -14,9 +14,11 @@ const BACKGROUND_COLOR: Color = Color::from_rgba(240, 217, 181, 255);
 /// yellowish
 const SELECTED_PIECE_COLOR: Color = Color::from_rgba(255, 255, 153, 200);
 /// cyanish
-const MOVE_POINT_COLOR: Color = Color::from_rgba(173, 255, 244, 255);
+const MOVE_OUTLINE_COLOR: Color = Color::from_rgba(173, 255, 244, 255);
+const MOVE_HIGHLIGHT_COLOR: Color = Color::from_rgba(173, 255, 244, 200);
 /// red
-const CAPTURE_POINT_COLOR: Color = Color::from_rgba(255, 0, 0, 255);
+const CAPTURE_OUTLINE_COLOR: Color = Color::from_rgba(255, 0, 0, 255);
+const CAPTURE_HIGHLIGHT_COLOR: Color = Color::from_rgba(255, 0, 0, 200);
 /// springgreen
 const HITCIRCLE_COLOR: Color = Color::from_rgba(0, 255, 127, 255);
 
@@ -133,14 +135,14 @@ impl App {
 
     /// Converts from a rotchess unit to world unit (pixel).
     ///
-    /// Must be run after we update the ratio after any screen resize, else the value is outdated.
+    /// Must be run after we update the ratio after any screen resize, lest the value be outdated.
     fn cnv_r(&self, a: f32) -> f32 {
-        self.runit_to_world_multiplier * a
+        a * self.runit_to_world_multiplier
     }
 
     /// Converts from a world unit (pixel) to rotchess unit.
     ///
-    /// Must be run after we update the ratio after any screen resize, else the value is outdated.
+    /// Must be run after we update the ratio after any screen resize, lest the value be outdated.
     fn cnv_w(&self, a: f32) -> f32 {
         a / self.runit_to_world_multiplier
     }
@@ -177,13 +179,6 @@ impl App {
                 button: emulator::MouseButton::LEFT,
             });
         }
-        // egui_macroquad::ui(|ctx| {
-        //     // egui::Window::new("My Window")
-        //     //     .resizable(true)
-        //     //     .show(ctx, |ui| {
-        //     //         ui.label("Hello World!");
-        //     //     });
-        // });
     }
 
     fn draw_board(&self) {
@@ -212,17 +207,17 @@ impl App {
         }
     }
 
-    fn draw_piece_outline(&self, piece: &Piece, color: Color) {
+    fn draw_piece_outline(&self, x: f32, y: f32, color: Color) {
         draw_circle_lines(
-            self.cnv_r(piece.x()),
-            self.cnv_r(piece.y()),
+            self.cnv_r(x),
+            self.cnv_r(y),
             self.cnv_r(PIECE_RADIUS),
             1.,
             color,
         );
     }
 
-    fn draw_piece_highlight(&self, piece: &Piece, color: Color) {
+    fn draw_piece_highlight(&self, x: f32, y: f32, color: Color) {
         /// Extra addition to the radius of the drawn circle.
         ///
         /// When highlighting a piece, there will be an outline over it. Without
@@ -230,8 +225,8 @@ impl App {
         /// and outline.
         const TOLERANCE: f32 = 0.5;
         draw_circle(
-            self.cnv_r(piece.x()),
-            self.cnv_r(piece.y()),
+            self.cnv_r(x),
+            self.cnv_r(y),
             self.cnv_r(PIECE_RADIUS) + TOLERANCE,
             color,
         );
@@ -264,7 +259,7 @@ impl App {
             );
 
             if show_hitcircles {
-                self.draw_piece_outline(piece, HITCIRCLE_COLOR);
+                self.draw_piece_outline(piece.x(), piece.y(), HITCIRCLE_COLOR);
             }
         }
     }
@@ -276,14 +271,33 @@ impl App {
         let selected = self.chess.selected();
 
         if let Some((piece, _)) = selected {
-            self.draw_piece_highlight(piece, SELECTED_PIECE_COLOR);
+            self.draw_piece_highlight(piece.x(), piece.y(), SELECTED_PIECE_COLOR);
         }
 
         // egui_macroquad::draw();
         self.draw_pieces(selected.is_some());
 
-        if let Some((piece, travelpoints)) = selected {
-            // todo!()
+        if let Some((_, travelpoints)) = selected {
+            for tp in travelpoints {
+                if tp.travelable {
+                    self.draw_piece_highlight(
+                        tp.x,
+                        tp.y,
+                        match tp.kind {
+                            TravelKind::Capture => CAPTURE_HIGHLIGHT_COLOR,
+                            TravelKind::Move => MOVE_HIGHLIGHT_COLOR,
+                        },
+                    );
+                }
+                self.draw_piece_outline(
+                    tp.x,
+                    tp.y,
+                    match tp.kind {
+                        TravelKind::Capture => CAPTURE_OUTLINE_COLOR,
+                        TravelKind::Move => MOVE_OUTLINE_COLOR,
+                    },
+                );
+            }
         }
     }
 }
