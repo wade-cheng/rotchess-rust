@@ -308,6 +308,9 @@ impl Hash for CorePieceData {
 impl PartialEq for CorePieceData {
     fn eq(&self, other: &Self) -> bool {
         self.center == other.center
+            && self.angle == other.angle
+            && self.side == other.side
+            && self.kind == other.kind
     }
 }
 impl Eq for CorePieceData {}
@@ -644,8 +647,18 @@ impl Pieces {
     }
 
     /// Move the piece at idx to x, y.
+    ///
+    /// # Warnings
+    ///
+    /// This shuffles piece indices!
     pub fn travel(&mut self, idx: usize, x: f32, y: f32) {
+        let orig_piece_center = self.inner[idx].center();
         self.inner.retain(|piece| !piece.collidepiece(x, y));
+        let idx = self
+            .inner
+            .iter()
+            .position(|p| p.center() == orig_piece_center)
+            .expect("Should still exist.");
 
         self.inner[idx].set_x(x);
         self.inner[idx].set_y(y);

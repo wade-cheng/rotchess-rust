@@ -92,7 +92,7 @@ impl RotchessEmulator {
 impl RotchessEmulator {
     /// Log the current selected piece's travelpoints in the internal buffer.
     ///
-    /// Such a piece must exist.
+    /// Such a piece index must exist.
     /// Will initialize the piece's internal auxiliary data if required.
     /// Will update internal auxiliary data always.
     pub fn update_travelpoints_unchecked(&mut self) {
@@ -143,6 +143,23 @@ impl RotchessEmulator {
                 // println!("{}", idx_of_piece_at_xy.is_some());
 
                 // handle captures
+                let pieces = &mut self.turns[self.curr_turn];
+                if let Some(idx) = self.selected {
+                    for tp in &self.travelpoints_buffer {
+                        if tp.kind == TravelKind::Capture
+                            && tp.travelable
+                            && Piece::collidepoint_generic(x, y, tp.x, tp.y)
+                        {
+                            pieces.travel(idx, tp.x, tp.y);
+                            self.selected =
+                                pieces.inner.iter().position(|p| p.center() == (tp.x, tp.y));
+                            debug_assert!(self.selected.is_some());
+                            self.update_travelpoints_unchecked();
+                            self.selected = None;
+                            return;
+                        }
+                    }
+                }
 
                 // handle piece selection
                 match (idx_of_piece_at_xy, self.selected) {
@@ -168,16 +185,13 @@ impl RotchessEmulator {
                 }
 
                 // handle moves
-                println!("moving...");
                 let pieces = &mut self.turns[self.curr_turn];
                 if let Some(idx) = self.selected {
-                    println!("some.");
                     for tp in &self.travelpoints_buffer {
                         if tp.kind == TravelKind::Move
                             && tp.travelable
                             && Piece::collidepoint_generic(x, y, tp.x, tp.y)
                         {
-                            println!("trv");
                             pieces.travel(idx, tp.x, tp.y);
                             self.update_travelpoints_unchecked();
                             self.selected = None;
