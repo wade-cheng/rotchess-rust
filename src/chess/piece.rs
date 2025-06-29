@@ -502,27 +502,6 @@ impl Piece {
         }
     }
 
-    /// Naively moves self to x,y and updates self invariants.
-    ///
-    /// Doesn't even check for promotion---should be done in Pieces.try_move() or something.
-    fn move_to(&mut self, x: f32, y: f32) {
-        println!(
-            "moving {:?} xy {}, {} to xy {}, {}",
-            self.core.kind,
-            self.x(),
-            self.y(),
-            x,
-            y
-        );
-
-        self.core.center = (x, y);
-
-        if self.secondary.is_some() && self.tertiary.is_some() {
-            self.update_capture_points_unchecked();
-            self.update_move_points_unchecked();
-        }
-    }
-
     pub fn capture_points_unchecked(&self) -> impl Iterator<Item = &(f32, f32)> {
         let tertiary = self
             .tertiary

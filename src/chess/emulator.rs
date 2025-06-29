@@ -9,8 +9,6 @@
 //!   - but that raises the question, can we move everything GamePieceData related to Board?
 //! - drag move/cap point to rotate, or mouseup without having dragged to move (if was possible)
 
-use egui::TextWrapMode;
-
 use crate::chess::piece::{Piece, Pieces};
 
 /// Mouse buttons a chess board can respond to.

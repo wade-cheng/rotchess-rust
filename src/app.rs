@@ -6,8 +6,8 @@ use macroquad::prelude::*;
 
 use crate::chess::{
     RotchessEmulator,
-    emulator::{self, Event, TravelKind, TravelPoint},
-    piece::{PIECE_RADIUS, Piece, Pieces},
+    emulator::{self, Event, TravelKind},
+    piece::{PIECE_RADIUS, Pieces},
 };
 
 const DARK_TILE_COLOR: Color = Color::from_rgba(181, 136, 99, 255);
