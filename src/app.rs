@@ -28,7 +28,6 @@ pub struct App {
     chess: RotchessEmulator,
     runit_to_world_multiplier: f32,
     images: HashMap<String, Texture2D>,
-    dragging: bool,
 }
 
 impl App {
@@ -127,7 +126,6 @@ impl App {
             chess: RotchessEmulator::with(Pieces::standard_board()),
             runit_to_world_multiplier: 0.,
             images: App::generate_images(),
-            dragging: false,
         }
     }
 
@@ -160,8 +158,6 @@ impl App {
                 y: mouse_y,
                 button: emulator::MouseButton::LEFT,
             });
-
-            self.dragging = true;
         }
 
         if is_mouse_button_released(MouseButton::Left) {
@@ -170,15 +166,12 @@ impl App {
                 y: mouse_y,
                 button: emulator::MouseButton::LEFT,
             });
-
-            self.dragging = false;
         }
 
-        if self.dragging && mouse_delta_position() != Vec2::ZERO {
-            self.chess.handle_event(Event::Drag {
+        if mouse_delta_position() != Vec2::ZERO {
+            self.chess.handle_event(Event::MouseMotion {
                 x: mouse_x,
                 y: mouse_y,
-                button: emulator::MouseButton::LEFT,
             });
         }
     }

@@ -458,6 +458,10 @@ impl Piece {
         self.core.kind
     }
 
+    pub fn set_kind(&mut self, kind: PieceKind) {
+        self.core.kind = kind;
+    }
+
     pub fn needs_init(&self) -> bool {
         self.secondary.is_none() || self.tertiary.is_none()
     }
@@ -497,8 +501,8 @@ impl Piece {
         }
 
         match side {
-            Side::Black => y + PIECE_RADIUS > (7. / 8.),
-            Side::White => y - PIECE_RADIUS < (1. / 8.),
+            Side::Black => y + PIECE_RADIUS > 7.,
+            Side::White => y - PIECE_RADIUS < 1.,
         }
     }
 
@@ -639,8 +643,13 @@ impl Pieces {
             .position(|p| p.center() == orig_piece_center)
             .expect("Should still exist.");
 
-        self.inner[idx].set_x(x);
-        self.inner[idx].set_y(y);
+        let piece = &mut self.inner[idx];
+        piece.set_x(x);
+        piece.set_y(y);
+        if Piece::should_promote(piece.kind(), piece.side(), y) {
+            piece.set_kind(PieceKind::Queen);
+            piece.init_auxiliary_data();
+        }
     }
 
     pub fn travelable(&self, piece: &Piece, x: f32, y: f32, kind: TravelKind) -> bool {
@@ -670,7 +679,7 @@ impl Pieces {
                         return true;
                     }
                 }
-                TravelKind::Move => return true,
+                TravelKind::Move => return pieces_overlapping_endpoint.len() == 0,
             };
         }
 

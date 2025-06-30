@@ -25,7 +25,7 @@ pub enum MouseButton {
 pub enum Event {
     ButtonDown { x: f32, y: f32, button: MouseButton },
     ButtonUp { x: f32, y: f32, button: MouseButton },
-    Drag { x: f32, y: f32, button: MouseButton },
+    MouseMotion { x: f32, y: f32 },
 }
 
 #[derive(PartialEq)]
@@ -61,7 +61,9 @@ pub struct RotchessEmulator {
     /// If `Some(sel_i)`, then `self.turns[curr_turn].inner[sel_i]` is the
     /// selected piece. Additionally, `travelpoints_buffer` is the travel
     /// points that that piece has access to.
-    selected: Option<usize>,
+    selected_piece: Option<usize>,
+    /// (idx of travelpoint within buffer, angle offset of drag, whether we have dragged yet)
+    selected_travelpoint: Option<(usize, f32, bool)>,
     turns: Vec<Pieces>,
 }
 
@@ -77,10 +79,22 @@ impl RotchessEmulator {
         Self {
             curr_turn: 0,
             travelpoints_buffer: vec![],
-            selected: None,
+            selected_piece: None,
+            selected_travelpoint: None,
             turns: vec![pieces],
         }
     }
+}
+
+/// Angle between from and to, given a pivot.
+fn calc_angle_offset(pivot: (f32, f32), from: (f32, f32), to: (f32, f32)) -> f32 {
+    let from = (from.0 - pivot.0, from.1 - pivot.1);
+    let to = (to.0 - pivot.0, to.1 - pivot.1);
+
+    let from_angle = f32::atan2(from.1, from.0);
+    let to_angle = f32::atan2(to.1, to.0);
+
+    (to_angle - from_angle) * -1.
 }
 
 /// Helpful functions for the update portion of a game loop implementing rotchess.
@@ -95,7 +109,7 @@ impl RotchessEmulator {
     /// Will update internal auxiliary data always.
     pub fn update_travelpoints_unchecked(&mut self) {
         let pieces = &mut self.turns[self.curr_turn];
-        let piece = &mut pieces.inner[self.selected.expect("Invariant")];
+        let piece = &mut pieces.inner[self.selected_piece.expect("Invariant")];
         if piece.needs_init() {
             piece.init_auxiliary_data();
         } else {
@@ -104,7 +118,7 @@ impl RotchessEmulator {
         }
 
         let pieces = &self.turns[self.curr_turn];
-        let piece = &pieces.inner[self.selected.expect("Invariant")];
+        let piece = &pieces.inner[self.selected_piece.expect("Invariant")];
         self.travelpoints_buffer.clear();
         for &(x, y) in piece.capture_points_unchecked() {
             self.travelpoints_buffer.push(TravelPoint {
@@ -127,79 +141,127 @@ impl RotchessEmulator {
     ///
     /// Priority order (high to low) for clicks:
     ///
+    /// 1. rotation dragging
     /// 1. captures
     /// 1. piece selection
     /// 1. moves
     pub fn handle_event(&mut self, e: Event) {
         match e {
-            Event::Drag { x, y, button } => {
+            Event::MouseMotion { x, y } => {
                 // println!("dragged: {} {}", x, y);
+                if let Some((tvp_idx, angle_offset, _)) = self.selected_travelpoint {
+                    let piece_idx = self
+                        .selected_piece
+                        .expect("A piece is sel by invariant of tvp.is_some().");
+                    let piece = &mut self.turns[self.curr_turn].inner[piece_idx];
+                    let piece_center = piece.center();
+                    piece.set_angle(
+                        calc_angle_offset(
+                            piece_center,
+                            (piece_center.0 + 10., piece_center.1),
+                            (x, y),
+                        ) + angle_offset,
+                    );
+                    piece.update_capture_points_unchecked();
+                    piece.update_move_points_unchecked();
+                    self.update_travelpoints_unchecked();
+
+                    self.selected_travelpoint = Some((tvp_idx, angle_offset, true));
+                }
             }
-            Event::ButtonDown { x, y, button } => {
+            Event::ButtonDown {
+                x,
+                y,
+                button: MouseButton::LEFT,
+            } => {
+                debug_assert!(
+                    self.selected_travelpoint.is_none(),
+                    "Should not be possible to buttondown without having the
+                    travel point be deselected already."
+                );
+
                 let pieces = &self.turns[self.curr_turn];
                 let idx_of_piece_at_xy = pieces.get(x, y);
                 // println!("{}", idx_of_piece_at_xy.is_some());
 
-                // handle captures
+                // handle clicking a travelpoint
+                //
+                // if we click a travelpoint, store in emulator data that we've sel'd a tvp
+                // with such an angle offset from our mousepos to the tvp center
                 let pieces = &mut self.turns[self.curr_turn];
-                if let Some(idx) = self.selected {
-                    for tp in &self.travelpoints_buffer {
-                        if tp.kind == TravelKind::Capture
-                            && tp.travelable
-                            && Piece::collidepoint_generic(x, y, tp.x, tp.y)
-                        {
-                            pieces.travel(idx, tp.x, tp.y);
-                            self.selected =
-                                pieces.inner.iter().position(|p| p.center() == (tp.x, tp.y));
-                            debug_assert!(self.selected.is_some());
-                            self.update_travelpoints_unchecked();
-                            self.selected = None;
+                if let Some(sel_idx) = self.selected_piece {
+                    for (tvp_idx, tp) in self.travelpoints_buffer.iter().enumerate() {
+                        if Piece::collidepoint_generic(x, y, tp.x, tp.y) {
+                            self.selected_travelpoint = Some((
+                                tvp_idx,
+                                dbg!(calc_angle_offset(
+                                    pieces.inner[sel_idx].center(),
+                                    (tp.x, tp.y),
+                                    (x, y),
+                                )),
+                                false,
+                            ));
                             return;
                         }
                     }
                 }
 
                 // handle piece selection
-                match (idx_of_piece_at_xy, self.selected) {
+                match (idx_of_piece_at_xy, self.selected_piece) {
                     (Some(new_i), Some(curr_sel_i)) => {
                         // we clicked on a piece, and a piece is already selected.
                         if new_i == curr_sel_i {
                             // we clicked on the already-selected piece, deselect it.
-                            self.selected = None;
+                            self.selected_piece = None;
                         } else {
                             // we clicked on a different piece, select that instead.
-                            self.selected = Some(new_i);
+                            self.selected_piece = Some(new_i);
                             self.update_travelpoints_unchecked();
                         }
                         return;
                     }
                     (Some(new_i), None) => {
                         // we clicked on a piece, and None pieces were selected.
-                        self.selected = Some(new_i);
+                        self.selected_piece = Some(new_i);
                         self.update_travelpoints_unchecked();
                         return;
                     }
                     _ => {}
                 }
-
-                // handle moves
-                let pieces = &mut self.turns[self.curr_turn];
-                if let Some(idx) = self.selected {
-                    for tp in &self.travelpoints_buffer {
-                        if tp.kind == TravelKind::Move
-                            && tp.travelable
-                            && Piece::collidepoint_generic(x, y, tp.x, tp.y)
-                        {
-                            pieces.travel(idx, tp.x, tp.y);
-                            self.update_travelpoints_unchecked();
-                            self.selected = None;
-                            return;
-                        }
-                    }
-                }
             }
-            Event::ButtonUp { x, y, button } => {
+            Event::ButtonUp {
+                x,
+                y,
+                button: MouseButton::LEFT,
+            } => {
                 // println!("up: {} {}", x, y);
+
+                if let Some((trav_idx, _, false)) = self.selected_travelpoint {
+                    let tp = &self.travelpoints_buffer[trav_idx];
+                    if tp.travelable && Piece::collidepoint_generic(x, y, tp.x, tp.y) {
+                        let pieces = &mut self.turns[self.curr_turn];
+                        pieces.travel(
+                            self.selected_piece
+                                .expect("Invariant of selected_travelpoint.issome"),
+                            tp.x,
+                            tp.y,
+                        );
+                        if tp.kind == TravelKind::Capture {
+                            self.selected_piece =
+                                pieces.inner.iter().position(|p| p.center() == (tp.x, tp.y));
+                        }
+                        debug_assert!(self.selected_piece.is_some());
+                        self.update_travelpoints_unchecked();
+                        self.selected_piece = None;
+                        self.selected_travelpoint = None;
+                        return;
+                    }
+                    self.selected_travelpoint = None;
+                }
+
+                if let Some((trav_idx, _, true)) = self.selected_travelpoint {
+                    self.selected_travelpoint = None;
+                }
             }
             _ => {}
         }
@@ -216,7 +278,7 @@ impl RotchessEmulator {
     ///
     /// If Some, it contains the piece and its possible travelpoints.
     pub fn selected(&self) -> Option<(&Piece, &[TravelPoint])> {
-        self.selected.map(|sel_i| {
+        self.selected_piece.map(|sel_i| {
             (
                 &self.turns[self.curr_turn].inner[sel_i],
                 self.travelpoints_buffer.as_slice(),
