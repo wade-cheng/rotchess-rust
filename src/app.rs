@@ -247,28 +247,32 @@ impl App {
     }
 
     fn draw_movablepoint_indicator(&self, x: f32, y: f32) {
-        draw_circle(self.cnv_r(x), self.cnv_r(y), 5., MOVE_HIGHLIGHT_COLOR);
+        draw_circle(
+            self.cnv_r(x),
+            self.cnv_r(y),
+            self.cnv_r(0.12),
+            MOVE_HIGHLIGHT_COLOR,
+        );
     }
 
     fn draw_capturablepoint_indicator(&self, x: f32, y: f32) {
         let x = self.cnv_r(x);
         let y = self.cnv_r(y);
-        /// in pixels
-        const DIST: f32 = 5.;
+        let dist = self.cnv_r(0.12);
         // draw_circle(x, y, 5., MOVE_HIGHLIGHT_COLOR);
 
         draw_triangle(
             // Vec2 { x, y },
             // Vec2 { x: x + DIST, y },
             // Vec2 { x, y: y - DIST },
-            Vec2 { x, y: y - DIST },
+            Vec2 { x, y: y - dist },
             Vec2 {
-                x: x - DIST / 2. * f32::sqrt(3.),
-                y: y + DIST / 2.,
+                x: x - dist / 2. * f32::sqrt(3.),
+                y: y + dist / 2.,
             },
             Vec2 {
-                x: x + DIST / 2. * f32::sqrt(3.),
-                y: y + DIST / 2.,
+                x: x + dist / 2. * f32::sqrt(3.),
+                y: y + dist / 2.,
             },
             CAPTURE_HIGHLIGHT_COLOR,
         );
