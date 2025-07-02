@@ -226,7 +226,7 @@ impl PieceKind {
         match self {
             PieceKind::Pawn => {
                 ans.push(DistancesAngle::singleton(f32::sqrt(2.), PI / 4.));
-                ans.push(DistancesAngle::singleton(f32::sqrt(2.), 3. * PI / 4.));
+                ans.push(DistancesAngle::singleton(f32::sqrt(2.), -PI / 4.));
             }
             PieceKind::King => {
                 for i in 0..8 {
@@ -254,7 +254,7 @@ impl PieceKind {
     fn get_move_das(&self) -> Vec<DistancesAngle> {
         let mut ans = vec![];
         match self {
-            PieceKind::Pawn => ans.push(DistancesAngle::repeated(1., 1., 2, PI / 2.)),
+            PieceKind::Pawn => ans.push(DistancesAngle::repeated(1., 1., 2, 0.)),
             PieceKind::King => {
                 for i in 0..8 {
                     ans.push(DistancesAngle::singleton(
@@ -653,7 +653,7 @@ impl Pieces {
     }
 
     pub fn travelable(&self, piece: &Piece, x: f32, y: f32, kind: TravelKind) -> bool {
-        println!("checking travelable points");
+        // println!("checking travelable points");
         let mut pieces_overlapping_endpoint = HashSet::new();
 
         // disallow capturing own side. also find which pieces overlap the endpoint
@@ -663,7 +663,7 @@ impl Pieces {
                 continue;
             }
 
-            if other_piece.collidepoint(x, y) {
+            if other_piece.collidepiece(x, y) {
                 pieces_overlapping_endpoint.insert(other_piece);
 
                 if other_piece.side() == piece.side() {
@@ -696,7 +696,7 @@ impl Pieces {
                     < 2. * PIECE_RADIUS
                 {
                     // piece is within correct point to line distance to block. we may be blocked unless we can capture this piece.
-                    println!("a {:?} can block", other_piece.kind());
+                    // println!("a {:?} can block", other_piece.kind());
                     if !pieces_overlapping_endpoint.contains(&other_piece) {
                         in_the_way += 1;
                     }
@@ -704,10 +704,10 @@ impl Pieces {
             }
         }
 
-        println!(
-            "inway: {in_the_way}, overlaps: {}",
-            pieces_overlapping_endpoint.len()
-        );
+        // println!(
+        //     "inway: {in_the_way}, overlaps: {}",
+        //     pieces_overlapping_endpoint.len()
+        // );
         if in_the_way > 0 {
             return false;
         }
@@ -738,23 +738,13 @@ impl Pieces {
         ];
 
         for i in 0..8 {
-            inner.push(Piece::from_tile(
-                (i, 1),
-                -PI / 2.,
-                Side::Black,
-                PieceKind::Pawn,
-            ));
-            inner.push(Piece::from_tile(
-                (i, 6),
-                PI / 2.,
-                Side::White,
-                PieceKind::Pawn,
-            ));
+            inner.push(Piece::from_tile((i, 1), -PI, Side::Black, PieceKind::Pawn));
+            inner.push(Piece::from_tile((i, 6), 0., Side::White, PieceKind::Pawn));
         }
 
         for (i, kind) in ORDER.iter().enumerate() {
-            inner.push(Piece::from_tile((i as u8, 0), -PI / 2., Side::Black, *kind));
-            inner.push(Piece::from_tile((i as u8, 7), PI / 2., Side::White, *kind));
+            inner.push(Piece::from_tile((i as u8, 0), -PI, Side::Black, *kind));
+            inner.push(Piece::from_tile((i as u8, 7), 0., Side::White, *kind));
         }
 
         Self { inner }

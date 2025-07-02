@@ -9,6 +9,8 @@
 //!   - but that raises the question, can we move everything GamePieceData related to Board?
 //! - drag move/cap point to rotate, or mouseup without having dragged to move (if was possible)
 
+use std::f32::consts::FRAC_PI_2;
+
 use crate::chess::piece::{Piece, Pieces};
 
 /// Mouse buttons a chess board can respond to.
@@ -94,7 +96,7 @@ fn calc_angle_offset(pivot: (f32, f32), from: (f32, f32), to: (f32, f32)) -> f32
     let from_angle = f32::atan2(from.1, from.0);
     let to_angle = f32::atan2(to.1, to.0);
 
-    (to_angle - from_angle) * -1.
+    to_angle - from_angle
 }
 
 /// Helpful functions for the update portion of a game loop implementing rotchess.
@@ -155,15 +157,15 @@ impl RotchessEmulator {
                         .expect("A piece is sel by invariant of tvp.is_some().");
                     let piece = &mut self.turns[self.curr_turn].inner[piece_idx];
                     let piece_center = piece.center();
-                    piece.set_angle(
-                        calc_angle_offset(
-                            piece_center,
-                            (piece_center.0 + 10., piece_center.1),
-                            (x, y),
-                        ) + angle_offset,
+
+                    // mouse_angle is the angle with piece as pivot, with 0rad being up. because for
+                    // some godforsaken reason I made the 0 angle up.
+                    let mouse_angle = -calc_angle_offset(
+                        piece_center,
+                        (piece_center.0, piece_center.1 - 10.), // and also, up is the negative y axis because macroquad.
+                        (x, y),
                     );
-                    piece.update_capture_points_unchecked();
-                    piece.update_move_points_unchecked();
+                    piece.set_angle(mouse_angle + angle_offset);
                     self.update_travelpoints_unchecked();
 
                     self.selected_travelpoint = Some((tvp_idx, angle_offset, true));
@@ -183,28 +185,6 @@ impl RotchessEmulator {
                 let pieces = &self.turns[self.curr_turn];
                 let idx_of_piece_at_xy = pieces.get(x, y);
                 // println!("{}", idx_of_piece_at_xy.is_some());
-
-                // handle clicking a travelpoint
-                //
-                // if we click a travelpoint, store in emulator data that we've sel'd a tvp
-                // with such an angle offset from our mousepos to the tvp center
-                let pieces = &mut self.turns[self.curr_turn];
-                if let Some(sel_idx) = self.selected_piece {
-                    for (tvp_idx, tp) in self.travelpoints_buffer.iter().enumerate() {
-                        if Piece::collidepoint_generic(x, y, tp.x, tp.y) {
-                            self.selected_travelpoint = Some((
-                                tvp_idx,
-                                dbg!(calc_angle_offset(
-                                    pieces.inner[sel_idx].center(),
-                                    (tp.x, tp.y),
-                                    (x, y),
-                                )),
-                                false,
-                            ));
-                            return;
-                        }
-                    }
-                }
 
                 // handle piece selection
                 match (idx_of_piece_at_xy, self.selected_piece) {
@@ -228,6 +208,27 @@ impl RotchessEmulator {
                     }
                     _ => {}
                 }
+
+                // handle clicking a travelpoint
+                //
+                // if we click a travelpoint, store in emulator data that we've sel'd a tvp
+                // with such an angle offset from our mousepos to the tvp center
+                let pieces = &mut self.turns[self.curr_turn];
+                if let Some(sel_idx) = self.selected_piece {
+                    for (tvp_idx, tp) in self.travelpoints_buffer.iter().enumerate() {
+                        if Piece::collidepoint_generic(x, y, tp.x, tp.y) {
+                            self.selected_travelpoint = Some((
+                                tvp_idx,
+                                calc_angle_offset(
+                                    pieces.inner[sel_idx].center(),
+                                    (pieces.inner[sel_idx].x(), pieces.inner[sel_idx].y() - 10.),
+                                    (x, y),
+                                ) + pieces.inner[sel_idx].angle(),
+                                false,
+                            ));
+                        }
+                    }
+                }
             }
             Event::ButtonUp {
                 x,
@@ -237,8 +238,13 @@ impl RotchessEmulator {
                 // println!("up: {} {}", x, y);
 
                 if let Some((trav_idx, _, false)) = self.selected_travelpoint {
+                    // if we selected a travelpoint and it hasn't been moved yet, we want to try
+                    // to initiate the travel.
                     let tp = &self.travelpoints_buffer[trav_idx];
-                    if tp.travelable && Piece::collidepoint_generic(x, y, tp.x, tp.y) {
+                    debug_assert!(Piece::collidepoint_generic(x, y, tp.x, tp.y));
+
+                    if tp.travelable {
+                        // if it is indeed travelable, travel.
                         let pieces = &mut self.turns[self.curr_turn];
                         pieces.travel(
                             self.selected_piece
@@ -246,10 +252,10 @@ impl RotchessEmulator {
                             tp.x,
                             tp.y,
                         );
-                        if tp.kind == TravelKind::Capture {
-                            self.selected_piece =
-                                pieces.inner.iter().position(|p| p.center() == (tp.x, tp.y));
-                        }
+                        // if tp.kind == TravelKind::Capture {
+                        self.selected_piece =
+                            pieces.inner.iter().position(|p| p.center() == (tp.x, tp.y));
+                        // }
                         debug_assert!(self.selected_piece.is_some());
                         self.update_travelpoints_unchecked();
                         self.selected_piece = None;
@@ -259,7 +265,7 @@ impl RotchessEmulator {
                     self.selected_travelpoint = None;
                 }
 
-                if let Some((trav_idx, _, true)) = self.selected_travelpoint {
+                if let Some((_, _, true)) = self.selected_travelpoint {
                     self.selected_travelpoint = None;
                 }
             }

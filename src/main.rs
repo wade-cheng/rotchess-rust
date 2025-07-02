@@ -7,7 +7,7 @@ fn window_conf() -> Conf {
     Conf {
         window_title: String::from("Rotating Chess"),
         window_height: 400,
-        window_width: 600,
+        window_width: 400,
         icon: Some(icon::rotchess_icon()),
         sample_count: 0, // remove antialiasing
         high_dpi: true,

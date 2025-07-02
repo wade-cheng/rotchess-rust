@@ -1,13 +1,16 @@
 //! An app that lets users play and see (update/draw) chess, computed with help from [`crate::chess`] and macroquad.
 
-use std::{collections::HashMap, f32::consts::PI};
+use std::{
+    collections::HashMap,
+    f32::consts::{PI, TAU},
+};
 
 use macroquad::prelude::*;
 
 use crate::chess::{
     RotchessEmulator,
     emulator::{self, Event, TravelKind},
-    piece::{PIECE_RADIUS, Pieces},
+    piece::{PIECE_RADIUS, Piece, Pieces},
 };
 
 const DARK_TILE_COLOR: Color = Color::from_rgba(181, 136, 99, 255);
@@ -168,6 +171,22 @@ impl App {
             });
         }
 
+        if is_mouse_button_pressed(MouseButton::Right) {
+            self.chess.handle_event(Event::ButtonDown {
+                x: mouse_x,
+                y: mouse_y,
+                button: emulator::MouseButton::RIGHT,
+            });
+        }
+
+        if is_mouse_button_released(MouseButton::Right) {
+            self.chess.handle_event(Event::ButtonUp {
+                x: mouse_x,
+                y: mouse_y,
+                button: emulator::MouseButton::RIGHT,
+            });
+        }
+
         if mouse_delta_position() != Vec2::ZERO {
             self.chess.handle_event(Event::MouseMotion {
                 x: mouse_x,
@@ -227,6 +246,34 @@ impl App {
         );
     }
 
+    fn draw_movablepoint_indicator(&self, x: f32, y: f32) {
+        draw_circle(self.cnv_r(x), self.cnv_r(y), 5., MOVE_HIGHLIGHT_COLOR);
+    }
+
+    fn draw_capturablepoint_indicator(&self, x: f32, y: f32) {
+        let x = self.cnv_r(x);
+        let y = self.cnv_r(y);
+        /// in pixels
+        const DIST: f32 = 5.;
+        // draw_circle(x, y, 5., MOVE_HIGHLIGHT_COLOR);
+
+        draw_triangle(
+            // Vec2 { x, y },
+            // Vec2 { x: x + DIST, y },
+            // Vec2 { x, y: y - DIST },
+            Vec2 { x, y: y - DIST },
+            Vec2 {
+                x: x - DIST / 2. * f32::sqrt(3.),
+                y: y + DIST / 2.,
+            },
+            Vec2 {
+                x: x + DIST / 2. * f32::sqrt(3.),
+                y: y + DIST / 2.,
+            },
+            CAPTURE_HIGHLIGHT_COLOR,
+        );
+    }
+
     fn draw_pieces(&self, show_hitcircles: bool) {
         /// Size as fraction of 1.
         const PIECE_SIZE: f32 = 0.9;
@@ -248,7 +295,7 @@ impl App {
                         x: self.cnv_r(PIECE_SIZE),
                         y: self.cnv_r(PIECE_SIZE),
                     }),
-                    rotation: piece.angle() - PI / 2.,
+                    rotation: TAU - piece.angle(),
                     ..Default::default()
                 },
             );
@@ -275,14 +322,22 @@ impl App {
         if let Some((_, travelpoints)) = selected {
             for tp in travelpoints {
                 if tp.travelable {
-                    self.draw_piece_highlight(
-                        tp.x,
-                        tp.y,
+                    let (xpix, ypix) = mouse_position();
+                    if Piece::collidepoint_generic(self.cnv_w(xpix), self.cnv_w(ypix), tp.x, tp.y) {
+                        self.draw_piece_highlight(
+                            tp.x,
+                            tp.y,
+                            match tp.kind {
+                                TravelKind::Capture => CAPTURE_HIGHLIGHT_COLOR,
+                                TravelKind::Move => MOVE_HIGHLIGHT_COLOR,
+                            },
+                        );
+                    } else {
                         match tp.kind {
-                            TravelKind::Capture => CAPTURE_HIGHLIGHT_COLOR,
-                            TravelKind::Move => MOVE_HIGHLIGHT_COLOR,
-                        },
-                    );
+                            TravelKind::Capture => self.draw_capturablepoint_indicator(tp.x, tp.y),
+                            TravelKind::Move => self.draw_movablepoint_indicator(tp.x, tp.y),
+                        }
+                    }
                 }
                 self.draw_piece_outline(
                     tp.x,
