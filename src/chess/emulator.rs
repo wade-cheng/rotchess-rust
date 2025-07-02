@@ -30,12 +30,13 @@ pub enum Event {
     MouseMotion { x: f32, y: f32 },
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum TravelKind {
     Capture,
     Move,
 }
 
+#[derive(Debug)]
 pub struct TravelPoint {
     pub x: f32,
     pub y: f32,
@@ -122,20 +123,20 @@ impl RotchessEmulator {
         let pieces = &self.turns[self.curr_turn];
         let piece = &pieces.inner[self.selected_piece.expect("Invariant")];
         self.travelpoints_buffer.clear();
-        for &(x, y) in piece.capture_points_unchecked() {
-            self.travelpoints_buffer.push(TravelPoint {
-                x,
-                y,
-                travelable: pieces.travelable(piece, x, y, TravelKind::Capture),
-                kind: TravelKind::Capture,
-            });
-        }
         for &(x, y) in piece.move_points_unchecked() {
             self.travelpoints_buffer.push(TravelPoint {
                 x,
                 y,
                 travelable: pieces.travelable(piece, x, y, TravelKind::Move),
                 kind: TravelKind::Move,
+            });
+        }
+        for &(x, y) in piece.capture_points_unchecked() {
+            self.travelpoints_buffer.push(TravelPoint {
+                x,
+                y,
+                travelable: pieces.travelable(piece, x, y, TravelKind::Capture),
+                kind: TravelKind::Capture,
             });
         }
     }
@@ -174,7 +175,7 @@ impl RotchessEmulator {
             Event::ButtonDown {
                 x,
                 y,
-                button: MouseButton::LEFT,
+                button: MouseButton::RIGHT,
             } => {
                 debug_assert!(
                     self.selected_travelpoint.is_none(),
@@ -184,7 +185,6 @@ impl RotchessEmulator {
 
                 let pieces = &self.turns[self.curr_turn];
                 let idx_of_piece_at_xy = pieces.get(x, y);
-                // println!("{}", idx_of_piece_at_xy.is_some());
 
                 // handle piece selection
                 match (idx_of_piece_at_xy, self.selected_piece) {
@@ -206,8 +206,25 @@ impl RotchessEmulator {
                         self.update_travelpoints_unchecked();
                         return;
                     }
-                    _ => {}
+                    (None, _) => {
+                        self.selected_piece = None;
+                    }
                 }
+            }
+            Event::ButtonDown {
+                x,
+                y,
+                button: MouseButton::LEFT,
+            } => {
+                debug_assert!(
+                    self.selected_travelpoint.is_none(),
+                    "Should not be possible to buttondown without having the
+                    travel point be deselected already."
+                );
+
+                let pieces = &self.turns[self.curr_turn];
+                let idx_of_piece_at_xy = pieces.get(x, y);
+                // println!("{}", idx_of_piece_at_xy.is_some());
 
                 // handle clicking a travelpoint
                 //
@@ -226,6 +243,39 @@ impl RotchessEmulator {
                                 ) + pieces.inner[sel_idx].angle(),
                                 false,
                             ));
+                            if tp.travelable {
+                                return;
+                            }
+                        }
+                    }
+                    if self.selected_travelpoint.is_some() {
+                        return;
+                    }
+                }
+
+                // handle piece selection
+                match (idx_of_piece_at_xy, self.selected_piece) {
+                    (Some(new_i), Some(curr_sel_i)) => {
+                        // we clicked on a piece, and a piece is already selected.
+                        if new_i == curr_sel_i {
+                            // we clicked on the already-selected piece, deselect it.
+                            self.selected_piece = None;
+                        } else {
+                            // we clicked on a different piece, select that instead.
+                            self.selected_piece = Some(new_i);
+                            self.update_travelpoints_unchecked();
+                        }
+                        return;
+                    }
+                    (Some(new_i), None) => {
+                        // we clicked on a piece, and None pieces were selected.
+                        self.selected_piece = Some(new_i);
+                        self.update_travelpoints_unchecked();
+                        return;
+                    }
+                    (None, _) => {
+                        if self.selected_travelpoint.is_none() {
+                            self.selected_piece = None;
                         }
                     }
                 }

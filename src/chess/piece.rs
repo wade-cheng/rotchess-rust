@@ -719,7 +719,7 @@ impl Pieces {
         );
         match kind {
             TravelKind::Capture => pieces_overlapping_endpoint.len() > 0,
-            TravelKind::Move => true,
+            TravelKind::Move => pieces_overlapping_endpoint.len() == 0,
         }
     }
 
