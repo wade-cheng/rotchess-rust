@@ -20,5 +20,6 @@
 pub mod emulator;
 pub mod floating_drift;
 pub mod piece;
+pub mod turn;
 
 pub use emulator::RotchessEmulator;

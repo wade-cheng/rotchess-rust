@@ -155,6 +155,22 @@ impl App {
         let (pixel_mouse_x, pixel_mouse_y) = mouse_position();
         let (mouse_x, mouse_y) = (self.cnv_w(pixel_mouse_x), self.cnv_w(pixel_mouse_y));
 
+        if is_key_pressed(KeyCode::Left) {
+            if is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift) {
+                self.chess.handle_event(Event::FirstTurn);
+            } else {
+                self.chess.handle_event(Event::PrevTurn);
+            }
+        }
+
+        if is_key_pressed(KeyCode::Right) {
+            if is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift) {
+                self.chess.handle_event(Event::LastTurn);
+            } else {
+                self.chess.handle_event(Event::NextTurn);
+            }
+        }
+
         if is_mouse_button_pressed(MouseButton::Left) {
             self.chess.handle_event(Event::ButtonDown {
                 x: mouse_x,

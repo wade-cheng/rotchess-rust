@@ -290,7 +290,7 @@ pub const PIECE_RADIUS: f32 = 17.0 / 50.0;
 /// Everything else (i.e. delayable piece data) can be derived from this.
 /// That is, this is the minimum of what needs to be serde'd for a game save
 /// to understand what defines a piece.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct CorePieceData {
     center: (f32, f32),
     angle: f32,
@@ -323,7 +323,7 @@ impl Eq for CorePieceData {}
 /// forbidden methods are called. this should be enforced with assertions.
 /// this can (and probably is) done when a piece is clicked in normal game code,
 /// but for test code we need to hack it in somewhere else that's intuitive.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct SecondaryPieceData {
     /// set by init_movement
     capture_das: Vec<DistancesAngle>,
@@ -340,6 +340,7 @@ impl From<&CorePieceData> for SecondaryPieceData {
     }
 }
 
+#[derive(Clone)]
 struct TertiaryPieceData {
     /// set by init_capture_points
     capture_points: Vec<(f32, f32)>,
@@ -360,6 +361,7 @@ impl From<(&CorePieceData, &SecondaryPieceData)> for TertiaryPieceData {
     }
 }
 
+#[derive(Clone)]
 pub struct Piece {
     core: CorePieceData,
     secondary: Option<SecondaryPieceData>,
@@ -613,6 +615,8 @@ fn point_to_line_dist(
     f32::abs((end_x - start_x) * (point_y - start_y) - (point_x - start_x) * (end_y - start_y))
         / f32::sqrt((end_x - start_x).powi(2) + (end_y - start_y).powi(2))
 }
+
+#[derive(Clone)]
 pub struct Pieces {
     pub inner: Vec<Piece>,
 }
