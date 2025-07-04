@@ -67,7 +67,7 @@ pub struct RotchessEmulator {
     selected_piece: Option<usize>,
     /// (idx of travelpoint within buffer, angle offset of drag, whether we have dragged yet)
     selected_travelpoint: Option<(usize, f32, bool)>,
-    turns: Vec<Pieces>,
+    working_board: Pieces,
 }
 
 /// Misc.
@@ -84,7 +84,7 @@ impl RotchessEmulator {
             travelpoints_buffer: vec![],
             selected_piece: None,
             selected_travelpoint: None,
-            turns: vec![pieces],
+            working_board: pieces,
         }
     }
 }
@@ -111,8 +111,7 @@ impl RotchessEmulator {
     /// Will initialize the piece's internal auxiliary data if required.
     /// Will update internal auxiliary data always.
     pub fn update_travelpoints_unchecked(&mut self) {
-        let pieces = &mut self.turns[self.curr_turn];
-        let piece = &mut pieces.inner[self.selected_piece.expect("Invariant")];
+        let piece = &mut self.working_board.inner[self.selected_piece.expect("Invariant")];
         if piece.needs_init() {
             piece.init_auxiliary_data();
         } else {
@@ -120,14 +119,13 @@ impl RotchessEmulator {
             piece.update_move_points_unchecked();
         }
 
-        let pieces = &self.turns[self.curr_turn];
-        let piece = &pieces.inner[self.selected_piece.expect("Invariant")];
+        let piece = &self.working_board.inner[self.selected_piece.expect("Invariant")];
         self.travelpoints_buffer.clear();
         for &(x, y) in piece.move_points_unchecked() {
             self.travelpoints_buffer.push(TravelPoint {
                 x,
                 y,
-                travelable: pieces.travelable(piece, x, y, TravelKind::Move),
+                travelable: self.working_board.travelable(piece, x, y, TravelKind::Move),
                 kind: TravelKind::Move,
             });
         }
@@ -135,7 +133,9 @@ impl RotchessEmulator {
             self.travelpoints_buffer.push(TravelPoint {
                 x,
                 y,
-                travelable: pieces.travelable(piece, x, y, TravelKind::Capture),
+                travelable: self
+                    .working_board
+                    .travelable(piece, x, y, TravelKind::Capture),
                 kind: TravelKind::Capture,
             });
         }
@@ -156,7 +156,7 @@ impl RotchessEmulator {
                     let piece_idx = self
                         .selected_piece
                         .expect("A piece is sel by invariant of tvp.is_some().");
-                    let piece = &mut self.turns[self.curr_turn].inner[piece_idx];
+                    let piece = &mut self.working_board.inner[piece_idx];
                     let piece_center = piece.center();
 
                     // mouse_angle is the angle with piece as pivot, with 0rad being up. because for
@@ -183,8 +183,7 @@ impl RotchessEmulator {
                     travel point be deselected already."
                 );
 
-                let pieces = &self.turns[self.curr_turn];
-                let idx_of_piece_at_xy = pieces.get(x, y);
+                let idx_of_piece_at_xy = self.working_board.get(x, y);
 
                 // handle piece selection
                 match (idx_of_piece_at_xy, self.selected_piece) {
@@ -222,15 +221,14 @@ impl RotchessEmulator {
                     travel point be deselected already."
                 );
 
-                let pieces = &self.turns[self.curr_turn];
-                let idx_of_piece_at_xy = pieces.get(x, y);
+                let idx_of_piece_at_xy = self.working_board.get(x, y);
                 // println!("{}", idx_of_piece_at_xy.is_some());
 
                 // handle clicking a travelpoint
                 //
                 // if we click a travelpoint, store in emulator data that we've sel'd a tvp
                 // with such an angle offset from our mousepos to the tvp center
-                let pieces = &mut self.turns[self.curr_turn];
+                let pieces = &mut self.working_board;
                 if let Some(sel_idx) = self.selected_piece {
                     for (tvp_idx, tp) in self.travelpoints_buffer.iter().enumerate() {
                         if Piece::collidepoint_generic(x, y, tp.x, tp.y) {
@@ -295,7 +293,7 @@ impl RotchessEmulator {
 
                     if tp.travelable {
                         // if it is indeed travelable, travel.
-                        let pieces = &mut self.turns[self.curr_turn];
+                        let pieces = &mut self.working_board;
                         pieces.travel(
                             self.selected_piece
                                 .expect("Invariant of selected_travelpoint.issome"),
@@ -327,7 +325,7 @@ impl RotchessEmulator {
 /// Helpful functions for the draw portion of a game loop implementing rotchess.
 impl RotchessEmulator {
     pub fn pieces(&self) -> &[Piece] {
-        self.turns[self.curr_turn].pieces()
+        self.working_board.pieces()
     }
 
     /// Whether there is a selected piece.
@@ -336,7 +334,7 @@ impl RotchessEmulator {
     pub fn selected(&self) -> Option<(&Piece, &[TravelPoint])> {
         self.selected_piece.map(|sel_i| {
             (
-                &self.turns[self.curr_turn].inner[sel_i],
+                &self.working_board.inner[sel_i],
                 self.travelpoints_buffer.as_slice(),
             )
         })
