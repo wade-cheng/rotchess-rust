@@ -5,6 +5,7 @@ use std::{
     f32::consts::{PI, TAU},
 };
 
+use egui::{Pos2, Rect};
 use macroquad::prelude::*;
 
 use crate::chess::{
@@ -153,9 +154,24 @@ impl App {
 
     pub fn update(&mut self) {
         egui_macroquad::ui(|egui_ctx| {
-            egui::Window::new("egui ❤ macroquad")
+            egui::Window::new("egui")
                 .resizable(false)
-                .fixed_pos((10., 10.))
+                // .fixed_pos((10., 10.))
+                // .min_size((2000., 500.))
+                .fixed_rect(
+                    Rect {
+                        min: Pos2 {
+                            x: self.cnv_r(8.) * screen_dpi_scale(),
+                            y: 0.,
+                        },
+                        max: Pos2 {
+                            x: screen_width(),
+                            y: screen_height(),
+                        },
+                    }
+                    .shrink(10.),
+                )
+                .title_bar(false)
                 .show(egui_ctx, |ui| {
                     ui.label("Test");
                 });
