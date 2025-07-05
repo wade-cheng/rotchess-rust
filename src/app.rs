@@ -14,7 +14,8 @@ use crate::chess::{
 };
 
 const DARK_TILE_COLOR: Color = Color::from_rgba(181, 136, 99, 255);
-const BACKGROUND_COLOR: Color = Color::from_rgba(240, 217, 181, 255);
+const LIGHT_TILE_COLOR: Color = Color::from_rgba(240, 217, 181, 255);
+const BACKGROUND_COLOR: Color = Color::from_rgba(230, 230, 230, 255);
 
 /// yellowish
 const SELECTED_PIECE_COLOR: Color = Color::from_rgba(255, 255, 153, 200);
@@ -212,6 +213,8 @@ impl App {
     }
 
     fn draw_board(&self) {
+        draw_rectangle(0., 0., self.cnv_r(8.), self.cnv_r(8.), LIGHT_TILE_COLOR);
+
         let mut top = 0;
         let mut left = 1;
         let mut next_row_immediate_dark = true;
