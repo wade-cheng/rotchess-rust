@@ -152,6 +152,14 @@ impl App {
     }
 
     pub fn update(&mut self) {
+        egui_macroquad::ui(|egui_ctx| {
+            egui::Window::new("egui ❤ macroquad")
+                .resizable(false)
+                .fixed_pos((10., 10.))
+                .show(egui_ctx, |ui| {
+                    ui.label("Test");
+                });
+        });
         self.update_runit_to_world_multiplier();
         let (pixel_mouse_x, pixel_mouse_y) = mouse_position();
         let (mouse_x, mouse_y) = (self.cnv_w(pixel_mouse_x), self.cnv_w(pixel_mouse_y));
@@ -372,5 +380,7 @@ impl App {
                 );
             }
         }
+
+        egui_macroquad::draw();
     }
 }
