@@ -299,17 +299,13 @@ impl RotchessEmulator {
                     if tp.travelable {
                         // if it is indeed travelable, travel.
                         let pieces = &mut self.turns.working_board_mut();
-                        pieces.travel(
+                        let new_piece_idx = pieces.travel(
                             self.selected_piece
                                 .expect("Invariant of selected_travelpoint.issome"),
                             tp.x,
                             tp.y,
                         );
-                        // if tp.kind == TravelKind::Capture {
-                        self.selected_piece =
-                            pieces.inner.iter().position(|p| p.center() == (tp.x, tp.y));
-                        // }
-                        debug_assert!(self.selected_piece.is_some());
+                        self.selected_piece = Some(new_piece_idx);
                         self.update_travelpoints_unchecked();
                         self.selected_piece = None;
                         self.selected_travelpoint = None;

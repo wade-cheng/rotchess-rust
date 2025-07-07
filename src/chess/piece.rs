@@ -633,23 +633,25 @@ impl Pieces {
     ///
     /// # Warnings
     ///
-    /// This shuffles piece indices!
-    pub fn travel(&mut self, idx: usize, x: f32, y: f32) {
+    /// This may shuffle piece indices! Returns the piece's new index.
+    pub fn travel(&mut self, idx: usize, x: f32, y: f32) -> usize {
         let orig_piece_center = self.inner[idx].center();
         self.inner.retain(|piece| !piece.collidepiece(x, y));
-        let idx = self
+        let new_idx = self
             .inner
             .iter()
             .position(|p| p.center() == orig_piece_center)
             .expect("Should still exist.");
 
-        let piece = &mut self.inner[idx];
+        let piece = &mut self.inner[new_idx];
         piece.set_x(x);
         piece.set_y(y);
         if Piece::should_promote(piece.kind(), piece.side(), y) {
             piece.set_kind(PieceKind::Queen);
             piece.init_auxiliary_data();
         }
+
+        new_idx
     }
 
     pub fn travelable(&self, piece: &Piece, x: f32, y: f32, kind: TravelKind) -> bool {
