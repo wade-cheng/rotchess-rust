@@ -625,7 +625,7 @@ impl Pieces {
         self.inner.iter().position(|piece| piece.collidepoint(x, y))
     }
 
-    pub fn pieces(&self) -> &[Piece] {
+    pub fn inner_ref(&self) -> &[Piece] {
         &self.inner
     }
 

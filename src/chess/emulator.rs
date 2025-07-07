@@ -352,7 +352,7 @@ impl RotchessEmulator {
 /// Helpful functions for the draw portion of a game loop implementing rotchess.
 impl RotchessEmulator {
     pub fn pieces(&self) -> &[Piece] {
-        self.turns.working_board_ref().pieces()
+        self.turns.working_board_ref().inner_ref()
     }
 
     /// Whether there is a selected piece.
