@@ -9,8 +9,6 @@
 //!   - but that raises the question, can we move everything GamePieceData related to Board?
 //! - drag move/cap point to rotate, or mouseup without having dragged to move (if was possible)
 
-use std::f32::consts::FRAC_PI_2;
-
 use crate::chess::{
     piece::{Piece, Pieces},
     turn::Turns,
@@ -49,16 +47,6 @@ pub struct TravelPoint {
     pub y: f32,
     pub travelable: bool,
     pub kind: TravelKind,
-}
-
-pub struct Guide {
-    a: (f32, f32),
-    b: (f32, f32),
-}
-
-pub enum AuxiliaryDrawable {
-    TravelPoint(TravelPoint),
-    Guides(Vec<Guide>),
 }
 
 pub struct RotchessEmulator {

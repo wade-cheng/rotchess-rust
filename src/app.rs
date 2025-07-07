@@ -1,9 +1,6 @@
 //! An app that lets users play and see (update/draw) chess, computed with help from [`crate::chess`] and macroquad.
 
-use std::{
-    collections::HashMap,
-    f32::consts::{PI, TAU},
-};
+use std::{collections::HashMap, f32::consts::TAU};
 
 use macroquad::prelude::*;
 
@@ -302,8 +299,7 @@ impl App {
         const PIECE_SIZE: f32 = 0.9;
         for piece in self.chess.pieces() {
             draw_texture_ex(
-                &self
-                    .images
+                self.images
                     .get(&format!(
                         "piece_{}{}1",
                         piece.kind().to_file_desc(),

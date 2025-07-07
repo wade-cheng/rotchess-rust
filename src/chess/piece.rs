@@ -176,11 +176,7 @@ impl PieceKind {
     }
 
     pub fn can_promote(&self) -> bool {
-        if *self == PieceKind::Pawn {
-            true
-        } else {
-            false
-        }
+        *self == PieceKind::Pawn
     }
 
     /// Add the DAs of a rook to `v`.
@@ -352,8 +348,8 @@ impl From<(&CorePieceData, &SecondaryPieceData)> for TertiaryPieceData {
     fn from((core, sec): (&CorePieceData, &SecondaryPieceData)) -> Self {
         let mut capture_points = vec![];
         let mut move_points = vec![];
-        Piece::extend_with_drawable_points(&core, &mut capture_points, sec.capture_das.iter());
-        Piece::extend_with_drawable_points(&core, &mut move_points, sec.move_das.iter());
+        Piece::extend_with_drawable_points(core, &mut capture_points, sec.capture_das.iter());
+        Piece::extend_with_drawable_points(core, &mut move_points, sec.move_das.iter());
         Self {
             capture_points,
             move_points,
@@ -429,7 +425,7 @@ impl Piece {
     }
 
     pub fn x(&self) -> f32 {
-        return self.core.center.0;
+        self.core.center.0
     }
 
     pub fn set_x(&mut self, x: f32) {
@@ -437,7 +433,7 @@ impl Piece {
     }
 
     pub fn y(&self) -> f32 {
-        return self.core.center.1;
+        self.core.center.1
     }
 
     pub fn set_y(&mut self, x: f32) {
@@ -445,7 +441,7 @@ impl Piece {
     }
 
     pub fn angle(&self) -> f32 {
-        return self.core.angle;
+        self.core.angle
     }
 
     pub fn set_angle(&mut self, angle: f32) {
@@ -625,7 +621,7 @@ impl Pieces {
     /// Get a piece's index within inner, if it exists.
     ///
     /// A maximum of one must exist.
-    pub fn get<'a>(&'a self, x: f32, y: f32) -> Option<usize> {
+    pub fn get(&self, x: f32, y: f32) -> Option<usize> {
         self.inner.iter().position(|piece| piece.collidepoint(x, y))
     }
 
@@ -679,11 +675,11 @@ impl Pieces {
         if piece.core.kind.can_jump() {
             match kind {
                 TravelKind::Capture => {
-                    if pieces_overlapping_endpoint.len() > 0 {
+                    if !pieces_overlapping_endpoint.is_empty() {
                         return true;
                     }
                 }
-                TravelKind::Move => return pieces_overlapping_endpoint.len() == 0,
+                TravelKind::Move => return pieces_overlapping_endpoint.is_empty(),
             };
         }
 
@@ -722,8 +718,8 @@ impl Pieces {
                 .all(|other_piece| other_piece.side() != piece.side())
         );
         match kind {
-            TravelKind::Capture => pieces_overlapping_endpoint.len() > 0,
-            TravelKind::Move => pieces_overlapping_endpoint.len() == 0,
+            TravelKind::Capture => !pieces_overlapping_endpoint.is_empty(),
+            TravelKind::Move => pieces_overlapping_endpoint.is_empty(),
         }
     }
 
