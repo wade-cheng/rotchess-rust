@@ -617,6 +617,47 @@ fn point_to_line_dist(
         / f32::sqrt((end_x - start_x).powi(2) + (end_y - start_y).powi(2))
 }
 
+pub enum File {
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+}
+
+pub enum Rank {
+    One,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+}
+
+pub struct SrcNotation {
+    pub piece: PieceKind,
+    pub file: Option<File>,
+    pub rank: Option<Rank>,
+}
+
+pub struct DestNotation {
+    pub file: File,
+    pub rank: Rank,
+}
+
+pub struct Notation {
+    pub src: SrcNotation,
+    pub dest: DestNotation,
+    pub capture: bool,
+    pub check: bool,
+    pub promotion: Option<PieceKind>,
+}
+
 /// A vector of pieces.
 ///
 /// # Invariants
