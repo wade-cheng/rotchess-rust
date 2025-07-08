@@ -1,5 +1,10 @@
 use std::{collections::HashSet, f32::consts::PI, hash::Hash};
 
+use macroquad::{
+    rand::{self, ChooseRandom},
+    time,
+};
+
 use crate::chess::emulator::TravelKind;
 
 /// An iterable over the distances of a [`DistancesAngle`].
@@ -612,17 +617,92 @@ fn point_to_line_dist(
         / f32::sqrt((end_x - start_x).powi(2) + (end_y - start_y).powi(2))
 }
 
+/// A vector of pieces.
+///
+/// # Invariants
+///
+/// We maintain that
+/// - pieces will not overlap
 #[derive(Clone)]
 pub struct Pieces {
-    pub inner: Vec<Piece>,
+    inner: Vec<Piece>,
 }
 
 impl Pieces {
-    /// Get a piece's index within inner, if it exists.
+    /// Create a board with standard piece positions.
+    pub fn standard_board() -> Self {
+        let mut inner = vec![];
+
+        const ORDER: [PieceKind; 8] = [
+            PieceKind::Rook,
+            PieceKind::Knight,
+            PieceKind::Bishop,
+            PieceKind::Queen,
+            PieceKind::King,
+            PieceKind::Bishop,
+            PieceKind::Knight,
+            PieceKind::Rook,
+        ];
+
+        for i in 0..8 {
+            inner.push(Piece::from_tile((i, 1), -PI, Side::Black, PieceKind::Pawn));
+            inner.push(Piece::from_tile((i, 6), 0., Side::White, PieceKind::Pawn));
+        }
+
+        for (i, kind) in ORDER.iter().enumerate() {
+            inner.push(Piece::from_tile((i as u8, 0), -PI, Side::Black, *kind));
+            inner.push(Piece::from_tile((i as u8, 7), 0., Side::White, *kind));
+        }
+
+        Self { inner }
+    }
+
+    /// Create a board with a randomized back row.
     ///
-    /// A maximum of one must exist.
-    pub fn get(&self, x: f32, y: f32) -> Option<usize> {
+    /// This is known as the 960, or Fischer, variant setup.
+    pub fn chess960_board() -> Self {
+        let mut inner = vec![];
+
+        let mut order: [PieceKind; 8] = [
+            PieceKind::Rook,
+            PieceKind::Knight,
+            PieceKind::Bishop,
+            PieceKind::Queen,
+            PieceKind::King,
+            PieceKind::Bishop,
+            PieceKind::Knight,
+            PieceKind::Rook,
+        ];
+
+        let r = rand::RandGenerator::new();
+        r.srand(u64::from_be_bytes(time::get_time().to_be_bytes()));
+
+        order.shuffle_with_state(&r);
+
+        for i in 0..8 {
+            inner.push(Piece::from_tile((i, 1), -PI, Side::Black, PieceKind::Pawn));
+            inner.push(Piece::from_tile((i, 6), 0., Side::White, PieceKind::Pawn));
+        }
+
+        for (i, kind) in order.iter().enumerate() {
+            inner.push(Piece::from_tile((i as u8, 0), -PI, Side::Black, *kind));
+            inner.push(Piece::from_tile((i as u8, 7), 0., Side::White, *kind));
+        }
+
+        Self { inner }
+    }
+
+    /// Get a piece's index within inner, if it exists.
+    pub fn get_piece(&self, x: f32, y: f32) -> Option<usize> {
         self.inner.iter().position(|piece| piece.collidepoint(x, y))
+    }
+
+    pub fn get(&self, index: usize) -> Option<&Piece> {
+        self.inner.get(index)
+    }
+
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut Piece> {
+        self.inner.get_mut(index)
     }
 
     pub fn inner_ref(&self) -> &[Piece] {
@@ -723,32 +803,5 @@ impl Pieces {
             TravelKind::Capture => !pieces_overlapping_endpoint.is_empty(),
             TravelKind::Move => pieces_overlapping_endpoint.is_empty(),
         }
-    }
-
-    pub fn standard_board() -> Self {
-        let mut inner = vec![];
-
-        const ORDER: [PieceKind; 8] = [
-            PieceKind::Rook,
-            PieceKind::Knight,
-            PieceKind::Bishop,
-            PieceKind::Queen,
-            PieceKind::King,
-            PieceKind::Bishop,
-            PieceKind::Knight,
-            PieceKind::Rook,
-        ];
-
-        for i in 0..8 {
-            inner.push(Piece::from_tile((i, 1), -PI, Side::Black, PieceKind::Pawn));
-            inner.push(Piece::from_tile((i, 6), 0., Side::White, PieceKind::Pawn));
-        }
-
-        for (i, kind) in ORDER.iter().enumerate() {
-            inner.push(Piece::from_tile((i as u8, 0), -PI, Side::Black, *kind));
-            inner.push(Piece::from_tile((i as u8, 7), 0., Side::White, *kind));
-        }
-
-        Self { inner }
     }
 }

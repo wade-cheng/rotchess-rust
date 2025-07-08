@@ -25,10 +25,25 @@ const CAPTURE_HIGHLIGHT_COLOR: Color = Color::from_rgba(255, 0, 0, 200);
 /// springgreen
 const HITCIRCLE_COLOR: Color = Color::from_rgba(0, 255, 127, 255);
 
+enum ChessLayout {
+    Standard,
+    Chess960,
+}
+
+impl ChessLayout {
+    fn get_layout(&self) -> Pieces {
+        match self {
+            ChessLayout::Standard => Pieces::standard_board(),
+            ChessLayout::Chess960 => Pieces::chess960_board(),
+        }
+    }
+}
+
 pub struct App {
     chess: RotchessEmulator,
     runit_to_world_multiplier: f32,
     images: HashMap<String, Texture2D>,
+    chess_layout: ChessLayout,
 }
 
 impl App {
@@ -127,6 +142,7 @@ impl App {
             chess: RotchessEmulator::with(Pieces::standard_board()),
             runit_to_world_multiplier: 0.,
             images: App::generate_images(),
+            chess_layout: ChessLayout::Standard,
         }
     }
 
@@ -152,6 +168,20 @@ impl App {
         self.update_runit_to_world_multiplier();
         let (pixel_mouse_x, pixel_mouse_y) = mouse_position();
         let (mouse_x, mouse_y) = (self.cnv_w(pixel_mouse_x), self.cnv_w(pixel_mouse_y));
+
+        if is_key_pressed(KeyCode::Key9) || is_key_pressed(KeyCode::Kp9) {
+            self.chess_layout = ChessLayout::Chess960;
+            self.chess = RotchessEmulator::with(self.chess_layout.get_layout());
+        }
+
+        if is_key_pressed(KeyCode::Key0) || is_key_pressed(KeyCode::Kp0) {
+            self.chess_layout = ChessLayout::Standard;
+            self.chess = RotchessEmulator::with(self.chess_layout.get_layout());
+        }
+
+        if is_key_pressed(KeyCode::R) {
+            self.chess = RotchessEmulator::with(self.chess_layout.get_layout());
+        }
 
         if is_key_pressed(KeyCode::Left) {
             if is_key_down(KeyCode::LeftShift) || is_key_down(KeyCode::RightShift) {

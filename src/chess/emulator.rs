@@ -107,8 +107,11 @@ impl RotchessEmulator {
     /// Will initialize the piece's internal auxiliary data if required.
     /// Will update internal auxiliary data always.
     pub fn update_travelpoints_unchecked(&mut self) {
-        let piece =
-            &mut self.turns.working_board_mut().inner[self.selected_piece.expect("Invariant")];
+        let piece = &mut self
+            .turns
+            .working_board_mut()
+            .get_mut(self.selected_piece.expect("Invariant"))
+            .unwrap();
         if piece.needs_init() {
             piece.init_auxiliary_data();
         } else {
@@ -116,7 +119,11 @@ impl RotchessEmulator {
             piece.update_move_points_unchecked();
         }
 
-        let piece = &self.turns.working_board_ref().inner[self.selected_piece.expect("Invariant")];
+        let piece = &self
+            .turns
+            .working_board_ref()
+            .get(self.selected_piece.expect("Invariant"))
+            .unwrap();
         self.travelpoints_buffer.clear();
         for &(x, y) in piece.move_points_unchecked() {
             self.travelpoints_buffer.push(TravelPoint {
@@ -161,7 +168,7 @@ impl RotchessEmulator {
                     let piece_idx = self
                         .selected_piece
                         .expect("A piece is sel by invariant of tvp.is_some().");
-                    let piece = &mut self.turns.working_board_mut().inner[piece_idx];
+                    let piece = &mut self.turns.working_board_mut().get_mut(piece_idx).unwrap();
                     let piece_center = piece.center();
 
                     // mouse_angle is the angle with piece as pivot, with 0rad being up. because for
@@ -188,7 +195,7 @@ impl RotchessEmulator {
                     travel point be deselected already."
                 );
 
-                let idx_of_piece_at_xy = self.turns.working_board_ref().get(x, y);
+                let idx_of_piece_at_xy = self.turns.working_board_ref().get_piece(x, y);
 
                 // handle piece selection
                 match (idx_of_piece_at_xy, self.selected_piece) {
@@ -226,7 +233,7 @@ impl RotchessEmulator {
                     travel point be deselected already."
                 );
 
-                let idx_of_piece_at_xy = self.turns.working_board_ref().get(x, y);
+                let idx_of_piece_at_xy = self.turns.working_board_ref().get_piece(x, y);
                 // println!("{}", idx_of_piece_at_xy.is_some());
 
                 // handle clicking a travelpoint
@@ -240,10 +247,13 @@ impl RotchessEmulator {
                             self.selected_travelpoint = Some((
                                 tvp_idx,
                                 calc_angle_offset(
-                                    pieces.inner[sel_idx].center(),
-                                    (pieces.inner[sel_idx].x(), pieces.inner[sel_idx].y() - 10.),
+                                    pieces.get(sel_idx).unwrap().center(),
+                                    (
+                                        pieces.get(sel_idx).unwrap().x(),
+                                        pieces.get(sel_idx).unwrap().y() - 10.,
+                                    ),
                                     (x, y),
-                                ) + pieces.inner[sel_idx].angle(),
+                                ) + pieces.get(sel_idx).unwrap().angle(),
                                 false,
                             ));
                             if tp.travelable {
@@ -357,7 +367,10 @@ impl RotchessEmulator {
     pub fn selected(&self) -> Option<(&Piece, &[TravelPoint])> {
         self.selected_piece.map(|sel_i| {
             (
-                &self.turns.working_board_ref().inner[sel_i],
+                self.turns
+                    .working_board_ref()
+                    .get(sel_i)
+                    .expect("exists because selected_piece.is_some()."),
                 self.travelpoints_buffer.as_slice(),
             )
         })
