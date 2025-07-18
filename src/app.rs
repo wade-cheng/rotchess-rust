@@ -1,10 +1,14 @@
-//! An app that lets users play and see (update/draw) chess, computed with help from [`crate::chess`] and macroquad.
+//! An app that lets users play and see (update/draw) chess, computed with help from [`rotchess_core`] and macroquad.
 
 use std::{collections::HashMap, f32::consts::TAU};
 
-use macroquad::prelude::*;
+use macroquad::{
+    prelude::*,
+    rand::{self, ChooseRandom},
+    time,
+};
 
-use crate::chess::{
+use rotchess_core::{
     RotchessEmulator,
     emulator::{self, Event, TravelKind},
     piece::{PIECE_RADIUS, Piece, Pieces},
@@ -34,7 +38,14 @@ impl ChessLayout {
     fn get_layout(&self) -> Pieces {
         match self {
             ChessLayout::Standard => Pieces::standard_board(),
-            ChessLayout::Chess960 => Pieces::chess960_board(),
+            ChessLayout::Chess960 => Pieces::chess960_board(|| {
+                let r = rand::RandGenerator::new();
+                r.srand(u64::from_be_bytes(time::get_time().to_be_bytes()));
+
+                let mut ordering: [usize; 8] = std::array::from_fn(|i| i);
+                ordering.shuffle_with_state(&r);
+                ordering
+            }),
         }
     }
 }

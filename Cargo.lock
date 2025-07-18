@@ -231,10 +231,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a651516ddc9168ebd67b24afd085a718be02f8858fe406591b013d101ce2f40"
 
 [[package]]
+name = "rotchess-core"
+version = "0.0.0-alpha"
+source = "git+https://github.com/wade-cheng/rotchess-core-rs?rev=bd69570#bd695708001e8ac36a4ba518374691f8eca5bc57"
+
+[[package]]
 name = "rotchess_mq"
 version = "0.1.0"
 dependencies = [
  "macroquad",
+ "rotchess-core",
 ]
 
 [[package]]
