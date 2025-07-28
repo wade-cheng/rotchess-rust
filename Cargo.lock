@@ -233,7 +233,7 @@ checksum = "5a651516ddc9168ebd67b24afd085a718be02f8858fe406591b013d101ce2f40"
 [[package]]
 name = "rotchess-core"
 version = "0.0.0-alpha"
-source = "git+https://github.com/wade-cheng/rotchess-core-rs?rev=bd69570#bd695708001e8ac36a4ba518374691f8eca5bc57"
+source = "git+https://github.com/wade-cheng/rotchess-core-rs?rev=e66581b1756d57368410f57a23ad6a53e66afab7#e66581b1756d57368410f57a23ad6a53e66afab7"
 
 [[package]]
 name = "rotchess_mq"

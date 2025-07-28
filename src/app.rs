@@ -180,6 +180,10 @@ impl App {
         let (pixel_mouse_x, pixel_mouse_y) = mouse_position();
         let (mouse_x, mouse_y) = (self.cnv_w(pixel_mouse_x), self.cnv_w(pixel_mouse_y));
 
+        if is_key_pressed(KeyCode::M) {
+            self.chess.make_best_move();
+        }
+
         if is_key_pressed(KeyCode::Key9) || is_key_pressed(KeyCode::Kp9) {
             self.chess_layout = ChessLayout::Chess960;
             self.chess = RotchessEmulator::with(self.chess_layout.get_layout());
