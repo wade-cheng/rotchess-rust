@@ -10,7 +10,7 @@
 //! - drag move/cap point to rotate, or mouseup without having dragged to move (if was possible)
 
 use crate::{
-    piece::{Piece, Pieces},
+    piece::{Piece, PieceId, Pieces},
     turn::Turns,
 };
 
@@ -44,10 +44,10 @@ pub enum Event {
     PrevTurn,
     NextTurn,
     LastTurn,
-    /// We've been told to rotate idx to r.
-    RotateUnchecked(usize, f32),
-    /// We've been told to move idx to x, y.
-    MoveUnchecked(usize, f32, f32),
+    /// We've been told to rotate the piece to r.
+    RotateUnchecked(PieceId, f32),
+    /// We've been told to move the piece to x, y.
+    MoveUnchecked(PieceId, f32, f32),
 }
 
 #[derive(PartialEq, Debug)]
@@ -73,7 +73,7 @@ pub struct RotchessEmulator {
     /// If `Some(sel_i)`, then `self.turns[curr_turn].inner[sel_i]` is the
     /// selected piece. Additionally, `travelpoints_buffer` is the travel
     /// points that that piece has access to.
-    selected_piece: Option<usize>,
+    selected_piece: Option<PieceId>,
     /// (idx of travelpoint within buffer, angle offset of drag, whether we have dragged yet)
     ///
     /// Set when we mbd to hold a travel point, updated when we drag it around.
@@ -119,9 +119,9 @@ pub enum ThingHappened {
     NextTurn,
     LastTurn,
     /// We rotated the piece at usize to r
-    Rotate(usize, f32),
+    Rotate(PieceId, f32),
     /// We moved the piece at usize to x, y
-    Move(usize, f32, f32),
+    Move(PieceId, f32, f32),
 }
 
 /// Helpful functions for the update portion of a game loop implementing rotchess.
@@ -194,10 +194,10 @@ impl RotchessEmulator {
             Event::MouseMotion { x, y } => {
                 // println!("dragged: {} {}", x, y);
                 if let Some((tvp_idx, angle_offset, _)) = self.selected_travelpoint {
-                    let piece_idx = self
+                    let piece_id = self
                         .selected_piece
                         .expect("A piece is sel by invariant of tvp.is_some().");
-                    let piece = &mut self.turns.working_board_mut().get_mut(piece_idx).unwrap();
+                    let piece = &mut self.turns.working_board_mut().get_mut(piece_id).unwrap();
                     let piece_center = piece.center();
 
                     // mouse_angle is the angle with piece as pivot, with 0rad being up. because for
@@ -342,10 +342,10 @@ impl RotchessEmulator {
                     if tp.travelable {
                         // if it is indeed travelable, travel.
                         let pieces = &mut self.turns.working_board_mut();
-                        let piece_idx = self // the idx of the piece that moves
+                        let piece_id = self // the idx of the piece that moves
                             .selected_piece
                             .expect("Invariant of selected_travelpoint.issome");
-                        let new_piece_idx = pieces.travel(piece_idx, tp_x, tp_y);
+                        let new_piece_idx = pieces.travel(piece_id, tp_x, tp_y);
                         self.selected_piece = Some(new_piece_idx);
                         self.update_travelpoints_unchecked();
                         self.selected_piece = None;
@@ -353,7 +353,7 @@ impl RotchessEmulator {
                         self.turns.save_turn();
                         self.turns
                             .set_to_move(self.pieces()[new_piece_idx].side().toggle());
-                        return Some(ThingHappened::Move(piece_idx, tp_x, tp_y));
+                        return Some(ThingHappened::Move(piece_id, tp_x, tp_y));
                     }
                     self.selected_travelpoint = None;
                 }
@@ -362,15 +362,15 @@ impl RotchessEmulator {
                     self.selected_travelpoint = None;
                     self.turns.save_turn();
 
-                    let piece_idx = self
+                    let piece_id = self
                         .selected_piece
                         .expect("Invariant of sel travelpt.is_some");
 
-                    self.turns.set_to_move(self.pieces()[piece_idx].side());
-                    let r = self.pieces()[piece_idx].angle();
+                    self.turns.set_to_move(self.pieces()[piece_id].side());
+                    let r = self.pieces()[piece_id].angle();
                     self.turns
-                        .set_to_move(self.pieces()[piece_idx].side().toggle());
-                    return Some(ThingHappened::Rotate(piece_idx, r));
+                        .set_to_move(self.pieces()[piece_id].side().toggle());
+                    return Some(ThingHappened::Rotate(piece_id, r));
                 }
 
                 None
@@ -399,7 +399,7 @@ impl RotchessEmulator {
                 self.selected_travelpoint = None;
                 Some(ThingHappened::LastTurn)
             }
-            Event::RotateUnchecked(piece_idx, r) => {
+            Event::RotateUnchecked(piece_id, r) => {
                 // to elaborate, it would suck to be playing around and then a piece
                 // rotates for "no reason"
                 assert!(
@@ -411,15 +411,15 @@ impl RotchessEmulator {
 
                 self.turns
                     .working_board_mut()
-                    .get_mut(piece_idx)
+                    .get_mut(piece_id)
                     .expect("Invariant of unchecked")
                     .set_angle(r);
                 self.turns.save_turn();
                 self.turns
-                    .set_to_move(self.pieces()[piece_idx].side().toggle());
+                    .set_to_move(self.pieces()[piece_id].side().toggle());
                 None
             }
-            Event::MoveUnchecked(piece_idx, x, y) => {
+            Event::MoveUnchecked(piece_id, x, y) => {
                 // to elaborate, it would suck to be playing around and then a piece
                 // move for "no reason"
                 assert!(
@@ -430,13 +430,13 @@ impl RotchessEmulator {
                 );
 
                 let pieces = &mut self.turns.working_board_mut();
-                let new_piece_idx = pieces.travel(piece_idx, x, y);
+                let new_piece_idx = pieces.travel(piece_id, x, y);
                 self.selected_piece = Some(new_piece_idx);
                 self.update_travelpoints_unchecked();
                 self.selected_piece = None;
                 self.turns.save_turn();
                 self.turns
-                    .set_to_move(self.pieces()[piece_idx].side().toggle());
+                    .set_to_move(self.pieces()[piece_id].side().toggle());
                 None
             }
             _ => None,
