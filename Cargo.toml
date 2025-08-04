@@ -1,9 +1,3 @@
-[package]
-name = "rotchess_mq"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-macroquad = "0.4.14"
-rotchess-core = { git = "https://github.com/wade-cheng/rotchess-core-rs", rev = "e66581b1756d57368410f57a23ad6a53e66afab7" }
-# rotchess-core = { path = "../rotchess-core" }
+[workspace]
+resolver = "3"
+members = ["rotchess-mq"]
