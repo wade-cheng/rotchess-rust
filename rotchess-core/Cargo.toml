@@ -1,0 +1,6 @@
+[package]
+name = "rotchess-core"
+version = "0.0.0-alpha"
+edition = "2024"
+
+[dependencies]
