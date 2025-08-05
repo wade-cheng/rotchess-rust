@@ -13,6 +13,7 @@ use rotchess_core::{
     emulator::{self, Event, TravelKind},
     piece::{PIECE_RADIUS, Piece, Pieces},
 };
+use rotchess_ui::Ui;
 
 const DARK_TILE_COLOR: Color = Color::from_rgba(181, 136, 99, 255);
 const LIGHT_TILE_COLOR: Color = Color::from_rgba(240, 217, 181, 255);
@@ -55,6 +56,7 @@ pub struct App {
     runit_to_world_multiplier: f32,
     images: HashMap<String, Texture2D>,
     chess_layout: ChessLayout,
+    ui: Ui,
 }
 
 impl App {
@@ -154,6 +156,7 @@ impl App {
             runit_to_world_multiplier: 0.,
             images: App::generate_images(),
             chess_layout: ChessLayout::Standard,
+            ui: Ui::new(),
         }
     }
 
@@ -177,6 +180,9 @@ impl App {
 
     pub fn update(&mut self) {
         self.update_runit_to_world_multiplier();
+
+        self.ui.update();
+
         let (pixel_mouse_x, pixel_mouse_y) = mouse_position();
         let (mouse_x, mouse_y) = (self.cnv_w(pixel_mouse_x), self.cnv_w(pixel_mouse_y));
 
@@ -413,5 +419,7 @@ impl App {
                 );
             }
         }
+
+        self.ui.draw();
     }
 }
