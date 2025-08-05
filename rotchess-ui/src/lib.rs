@@ -1,17 +1,9 @@
 //! User interface code for all the non-chessboard stuff.
 
-use macroquad::text::Font;
-use std::sync::LazyLock;
-
 mod screens;
 use screens::*;
 
-pub fn font() -> &'static Font {
-    static FONT: LazyLock<Font> = LazyLock::new(|| {
-        macroquad::text::load_ttf_font_from_bytes(include_bytes!("../assets/OpenSans.ttf")).unwrap()
-    });
-    &FONT
-}
+pub mod common;
 
 pub struct Ui {
     curr_screen_id: ScreenId,

@@ -1,11 +1,8 @@
-use std::collections::HashMap;
 use std::f32::consts::TAU;
 
 use macroquad::prelude::*;
 use macroquad::{
-    prelude::ImageFormat,
     rand::{self, ChooseRandom},
-    texture::Texture2D,
     time,
     window::{screen_height, screen_width},
 };
@@ -54,101 +51,10 @@ impl ChessLayout {
 pub struct Game {
     chess: RotchessEmulator,
     runit_to_world_multiplier: f32,
-    images: HashMap<String, Texture2D>,
     chess_layout: ChessLayout,
 }
 
 impl Game {
-    fn generate_images() -> HashMap<String, Texture2D> {
-        let mut images = HashMap::new();
-        images.insert(
-            "piece_bishopB1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_bishopB1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-        images.insert(
-            "piece_bishopW1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_bishopW1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-        images.insert(
-            "piece_kingB1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_kingB1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-        images.insert(
-            "piece_kingW1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_kingW1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-        images.insert(
-            "piece_knightB1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_knightB1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-        images.insert(
-            "piece_knightW1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_knightW1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-        images.insert(
-            "piece_pawnB1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_pawnB1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-        images.insert(
-            "piece_pawnW1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_pawnW1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-        images.insert(
-            "piece_queenB1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_queenB1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-        images.insert(
-            "piece_queenW1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_queenW1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-        images.insert(
-            "piece_rookB1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_rookB1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-        images.insert(
-            "piece_rookW1".to_string(),
-            Texture2D::from_file_with_format(
-                include_bytes!("../../assets/pieces_png/piece_rookW1.png"),
-                Some(ImageFormat::Png),
-            ),
-        );
-
-        images
-    }
-
     fn update_runit_to_world_multiplier(&mut self) {
         self.runit_to_world_multiplier = f32::min(screen_width(), screen_height()) / 8.;
     }
@@ -171,7 +77,6 @@ impl Game {
         Self {
             chess: RotchessEmulator::with(Pieces::standard_board()),
             runit_to_world_multiplier: 0.,
-            images: Self::generate_images(),
             chess_layout: ChessLayout::Standard,
         }
     }
@@ -269,13 +174,11 @@ impl Game {
         const PIECE_SIZE: f32 = 0.9;
         for piece in self.chess.pieces() {
             draw_texture_ex(
-                self.images
-                    .get(&format!(
-                        "piece_{}{}1",
-                        piece.kind().to_file_desc(),
-                        piece.side().to_file_desc()
-                    ))
-                    .expect("Pieces should correctly map to the file descrs."),
+                crate::common::get_image_unchecked(&format!(
+                    "piece_{}{}1",
+                    piece.kind().to_file_desc(),
+                    piece.side().to_file_desc()
+                )),
                 self.cnv_r(piece.x() - PIECE_SIZE / 2.),
                 self.cnv_r(piece.y() - PIECE_SIZE / 2.),
                 WHITE,

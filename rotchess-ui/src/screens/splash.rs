@@ -33,7 +33,7 @@ impl Screen for Splash {
             100.,
             300.,
             TextParams {
-                font: Some(super::super::font()),
+                font: Some(crate::common::font()),
                 font_size: 50,
                 font_scale: 1.0,
                 font_scale_aspect: 1.0,
