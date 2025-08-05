@@ -1,14 +1,14 @@
 use macroquad::prelude::*;
 
 use rotchess_mq::app::App;
-use rotchess_mq::icon;
+use rotchess_mq::common;
 
 fn window_conf() -> Conf {
     Conf {
         window_title: String::from("Rotating Chess"),
         window_height: 400,
         window_width: 400,
-        icon: Some(icon::rotchess_icon()),
+        icon: Some(common::rotchess_icon()),
         sample_count: 0, // remove antialiasing
         high_dpi: true,
         ..Default::default()

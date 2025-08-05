@@ -1,4 +1,5 @@
 use macroquad::{
+    input::is_mouse_button_down,
     shapes::draw_rectangle,
     text::{TextParams, draw_text},
 };
@@ -23,7 +24,11 @@ impl Screen for Splash {
     fn exit(&mut self, global_data: &mut GlobalData) {}
 
     fn update(&mut self, global_data: &mut GlobalData) -> Option<ScreenId> {
-        None
+        if is_mouse_button_down(macroquad::input::MouseButton::Left) {
+            Some(ScreenId::Game)
+        } else {
+            None
+        }
     }
 
     fn draw(&self) {
