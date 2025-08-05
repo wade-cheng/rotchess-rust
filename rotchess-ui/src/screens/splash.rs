@@ -1,8 +1,4 @@
-use macroquad::{
-    input::is_mouse_button_down,
-    shapes::draw_rectangle,
-    text::{TextParams, draw_text},
-};
+use macroquad::{input::is_mouse_button_down, text::TextParams};
 
 use super::{GlobalData, Screen, ScreenId};
 
@@ -19,11 +15,11 @@ impl Screen for Splash {
         ScreenId::Splash
     }
 
-    fn enter(&mut self, global_data: &mut GlobalData) {}
+    fn enter(&mut self, _global_data: &mut GlobalData) {}
 
-    fn exit(&mut self, global_data: &mut GlobalData) {}
+    fn exit(&mut self, _global_data: &mut GlobalData) {}
 
-    fn update(&mut self, global_data: &mut GlobalData) -> Option<ScreenId> {
+    fn update(&mut self, _global_data: &mut GlobalData) -> Option<ScreenId> {
         if is_mouse_button_down(macroquad::input::MouseButton::Left) {
             Some(ScreenId::Game)
         } else {

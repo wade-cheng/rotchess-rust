@@ -13,11 +13,11 @@ impl Screen for Multiplayer {
         ScreenId::Multiplayer
     }
 
-    fn enter(&mut self, global_data: &mut GlobalData) {}
+    fn enter(&mut self, _global_data: &mut GlobalData) {}
 
-    fn exit(&mut self, global_data: &mut GlobalData) {}
+    fn exit(&mut self, _global_data: &mut GlobalData) {}
 
-    fn update(&mut self, global_data: &mut GlobalData) -> Option<ScreenId> {
+    fn update(&mut self, _global_data: &mut GlobalData) -> Option<ScreenId> {
         None
     }
 
