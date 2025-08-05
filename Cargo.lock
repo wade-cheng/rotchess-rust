@@ -235,20 +235,20 @@ name = "rotchess-core"
 version = "0.0.0-alpha"
 
 [[package]]
-name = "rotchess-mq"
-version = "0.0.0-alpha"
-dependencies = [
- "macroquad",
- "rotchess-core",
- "rotchess-ui",
-]
-
-[[package]]
 name = "rotchess-ui"
 version = "0.0.0-alpha"
 dependencies = [
  "macroquad",
  "rotchess-core",
+]
+
+[[package]]
+name = "rotchess-window"
+version = "0.0.0-alpha"
+dependencies = [
+ "macroquad",
+ "rotchess-core",
+ "rotchess-ui",
 ]
 
 [[package]]

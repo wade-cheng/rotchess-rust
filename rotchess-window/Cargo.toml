@@ -1,5 +1,5 @@
 [package]
-name = "rotchess-mq"
+name = "rotchess-window"
 version = "0.0.0-alpha"
 edition = "2024"
 

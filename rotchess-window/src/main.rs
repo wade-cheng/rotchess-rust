@@ -1,6 +1,6 @@
 use macroquad::prelude::*;
 
-use rotchess_mq::common::window_conf;
+use rotchess_window::window_conf::window_conf;
 use rotchess_ui::Ui;
 
 #[macroquad::main(window_conf)]
