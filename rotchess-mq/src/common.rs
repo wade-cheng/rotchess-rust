@@ -61,11 +61,3 @@ pub fn window_conf() -> Conf {
         ..Default::default()
     }
 }
-
-// use std::sync::LazyLock;
-// pub fn font() -> &'static Font {
-//     static FONT: LazyLock<Font> = LazyLock::new(|| {
-//         macroquad::text::load_ttf_font_from_bytes(include_bytes!("../assets/OpenSans.ttf")).unwrap()
-//     });
-//     &FONT
-// }
