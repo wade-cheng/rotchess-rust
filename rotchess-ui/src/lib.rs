@@ -41,12 +41,11 @@ impl Default for Ui {
 
 impl Ui {
     pub fn new() -> Self {
+        common::load_assets();
         Self::default()
     }
 
     pub fn update(&mut self) {
-        common::poll_assets();
-
         let curr_screen_id = &mut self.curr_screen_id;
         let global_data = &mut self.global_data;
         let screen_pool = &mut self.screen_pool;

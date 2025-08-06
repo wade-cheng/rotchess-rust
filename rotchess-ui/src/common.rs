@@ -17,7 +17,8 @@ use std::{
     sync::{LazyLock, OnceLock},
 };
 
-pub fn poll_assets() {
+/// Call once to make sure our assets are eventually loaded.
+pub fn load_assets() {
     move_sound();
 }
 
