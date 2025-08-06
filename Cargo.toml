@@ -7,7 +7,7 @@ members = ["rotchess-window", "rotchess-core", "rotchess-ui"]
 rotchess-window = { path = "rotchess-window" }
 rotchess-core = { path = "rotchess-core" }
 rotchess-ui = { path = "rotchess-ui" }
-macroquad = "0.4.14"
+macroquad = { version = "0.4.14", features = ["audio"] }
 
 # everything below here is how we get src/main.rs compiling.
 

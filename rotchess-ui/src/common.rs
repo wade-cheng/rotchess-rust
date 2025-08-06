@@ -25,44 +25,24 @@ pub fn poll_assets() {
 ///
 /// Uses a static [`OnceLock`] to prevent reinstantiation.
 pub fn move_sound() -> Option<&'static Sound> {
-    #[derive(Debug)]
-    enum State {
-        Waiting(Coroutine<Result<Sound, Error>>),
-        Finished(Sound),
-    }
+    static WAITING_SOUND: OnceLock<Coroutine<Result<Sound, Error>>> = OnceLock::new();
+    static FINISHED_SOUND: OnceLock<Sound> = OnceLock::new();
 
-    impl State {
-        /// Get the sound from a finished state, panicking if not finished.
-        pub fn finished_sound(&self) -> &Sound {
-            match self {
-                State::Waiting(_) => panic!("invariant"),
-                State::Finished(sound) => &sound,
-            }
-        }
-    }
-
-    static SOUND: OnceLock<State> = OnceLock::new();
-
-    match OnceLock::get(&SOUND) {
-        None => {
-            SOUND
-                .set(State::Waiting(start_coroutine(
-                    macroquad::audio::load_sound_from_bytes(include_bytes!(
-                        "../assets/sound/move.wav"
-                    )),
-                )))
-                .expect("cell should not be already initialized");
-            None
-        }
-        Some(State::Waiting(coroutine)) => coroutine.retrieve().map(|retrieved| {
+    if let Some(sound) = OnceLock::get(&FINISHED_SOUND) {
+        Some(sound)
+    } else if let Some(coroutine) = OnceLock::get(&WAITING_SOUND) {
+        coroutine.retrieve().map(|retrieved| {
             let sound = retrieved.expect("hardcoded sound should parse correctly");
-            SOUND.set(State::Finished(sound));
-            SOUND
-                .get()
-                .expect("we just set the sound.")
-                .finished_sound()
-        }),
-        Some(State::Finished(sound)) => Some(&sound),
+            FINISHED_SOUND.set(sound).expect("shouldn't be set yet");
+            FINISHED_SOUND.get().expect("we just set the sound.")
+        })
+    } else {
+        WAITING_SOUND
+            .set(start_coroutine(macroquad::audio::load_sound_from_bytes(
+                include_bytes!("../assets/sound/move.wav"),
+            )))
+            .expect("cell should not be already initialized");
+        None
     }
 }
 
