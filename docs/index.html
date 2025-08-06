@@ -39,10 +39,11 @@
 
   <body>
     <canvas id="glcanvas" tabindex="1"></canvas>
-    <!-- Minified and statically hosted version of https://github.com/not-fl3/macroquad/blob/master/js/mq_js_bundle.js -->
-    <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script>
+    <!-- Minified and statically hosted version of https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js -->
+    <!-- Someone recommended me "host mq_js_bundle.js yourself instead of pulling it from macroquad website, otherwise your game will break the next time Macroquad updates" -->
+    <script src="mq_js_bundle.js"></script>
     <script>
-      load("rotchess_mq.wasm");
+      load("rotchess-rust.wasm");
     </script>
     <!-- Your compiled wasm file -->
   </body>

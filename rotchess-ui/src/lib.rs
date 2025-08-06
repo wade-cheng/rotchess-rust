@@ -13,7 +13,7 @@ pub struct Ui {
 
 impl Default for Ui {
     fn default() -> Self {
-        let curr_screen_id = ScreenId::Splash;
+        let curr_screen_id = ScreenId::Game;
         let global_data = Default::default();
         let screen_pool = [
             Box::new(Game::new()) as Box<dyn Screen>,

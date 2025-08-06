@@ -235,7 +235,6 @@ name = "rotchess"
 version = "0.0.0-alpha"
 dependencies = [
  "macroquad",
- "rotchess-core",
  "rotchess-ui",
  "rotchess-window",
 ]

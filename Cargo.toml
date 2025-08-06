@@ -2,11 +2,14 @@
 resolver = "3"
 members = ["rotchess-window", "rotchess-core", "rotchess-ui"]
 
+# these are the dependencies we want to keep the same across the workspace.
 [workspace.dependencies]
 rotchess-window = { path = "rotchess-window" }
 rotchess-core = { path = "rotchess-core" }
 rotchess-ui = { path = "rotchess-ui" }
 macroquad = "0.4.14"
+
+# everything below here is how we get src/main.rs compiling.
 
 [package]
 name = "rotchess"
@@ -17,8 +20,9 @@ edition = "2024"
 name = "rotchess-rust"
 path = "src/main.rs"
 
+# note the workspace = true. this, thoughout the Cargo.tomls in this space, 
+# will inherit from [workspace.dependencies] above.
 [dependencies]
 rotchess-window = { workspace = true }
-rotchess-core = { workspace = true }
 rotchess-ui = { workspace = true }
 macroquad = { workspace = true }
