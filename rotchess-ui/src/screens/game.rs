@@ -1,14 +1,17 @@
 use std::f32::consts::TAU;
 
+use macroquad::audio::play_sound_once;
 use macroquad::prelude::*;
 use macroquad::{
     rand::{self, ChooseRandom},
     time,
     window::{screen_height, screen_width},
 };
-use rotchess_core::emulator::{self, Event, TravelKind};
+use rotchess_core::emulator::{self, Event, ThingHappened, TravelKind};
 use rotchess_core::piece::{PIECE_RADIUS, Piece};
 use rotchess_core::{RotchessEmulator, piece::Pieces};
+
+use crate::common::move_sound;
 
 use super::{GlobalData, Screen, ScreenId};
 
@@ -257,11 +260,18 @@ impl Screen for Game {
         }
 
         if is_mouse_button_released(MouseButton::Left) {
-            self.chess.handle_event(Event::ButtonUp {
+            let thing_happened = self.chess.handle_event(Event::ButtonUp {
                 x: mouse_x,
                 y: mouse_y,
                 button: emulator::MouseButton::LEFT,
             });
+
+            if let Some(ThingHappened::Move(_, _, _)) | Some(ThingHappened::Rotate(_, _)) =
+                thing_happened
+                && move_sound().is_some()
+            {
+                play_sound_once(&move_sound().unwrap());
+            };
         }
 
         if is_mouse_button_pressed(MouseButton::Right) {

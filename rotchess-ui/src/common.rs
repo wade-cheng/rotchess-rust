@@ -2,8 +2,69 @@
 //!
 //! Mutable utilities should be placed in the [`crate::Ui`]'s [`GlobalData`][`crate::screens::GlobalData`].
 
-use macroquad::{prelude::ImageFormat, text::Font, texture::Texture2D};
-use std::{collections::HashMap, sync::LazyLock};
+use macroquad::{
+    Error,
+    audio::Sound,
+    prelude::{
+        ImageFormat,
+        coroutines::{Coroutine, start_coroutine},
+    },
+    text::Font,
+    texture::Texture2D,
+};
+use std::{
+    collections::HashMap,
+    sync::{LazyLock, OnceLock},
+};
+
+pub fn poll_assets() {
+    move_sound();
+}
+
+/// Get the sound for moves and rotates.
+///
+/// Uses a static [`OnceLock`] to prevent reinstantiation.
+pub fn move_sound() -> Option<&'static Sound> {
+    #[derive(Debug)]
+    enum State {
+        Waiting(Coroutine<Result<Sound, Error>>),
+        Finished(Sound),
+    }
+
+    impl State {
+        /// Get the sound from a finished state, panicking if not finished.
+        pub fn finished_sound(&self) -> &Sound {
+            match self {
+                State::Waiting(_) => panic!("invariant"),
+                State::Finished(sound) => &sound,
+            }
+        }
+    }
+
+    static SOUND: OnceLock<State> = OnceLock::new();
+
+    match OnceLock::get(&SOUND) {
+        None => {
+            SOUND
+                .set(State::Waiting(start_coroutine(
+                    macroquad::audio::load_sound_from_bytes(include_bytes!(
+                        "../assets/sound/move.wav"
+                    )),
+                )))
+                .expect("cell should not be already initialized");
+            None
+        }
+        Some(State::Waiting(coroutine)) => coroutine.retrieve().map(|retrieved| {
+            let sound = retrieved.expect("hardcoded sound should parse correctly");
+            SOUND.set(State::Finished(sound));
+            SOUND
+                .get()
+                .expect("we just set the sound.")
+                .finished_sound()
+        }),
+        Some(State::Finished(sound)) => Some(&sound),
+    }
+}
 
 /// Get the font we use for the game.
 ///
