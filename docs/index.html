@@ -35,6 +35,12 @@
         z-index: 0;
       }
     </style>
+    <script>
+      // prevent right click from showing the context menu
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+    </script>
   </head>
 
   <body>
