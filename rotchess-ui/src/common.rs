@@ -1,6 +1,13 @@
+//! Common immutable utilites that can be used through all ui code.
+//!
+//! Mutable utilities should be placed in the [`crate::Ui`]'s [`GlobalData`][`crate::screens::GlobalData`].
+
 use macroquad::{prelude::ImageFormat, text::Font, texture::Texture2D};
 use std::{collections::HashMap, sync::LazyLock};
 
+/// Get the font we use for the game.
+///
+/// Uses a static [`LazyLock`] to prevent reinstantiation.
 pub fn font() -> &'static Font {
     static FONT: LazyLock<Font> = LazyLock::new(|| {
         macroquad::text::load_ttf_font_from_bytes(include_bytes!("../assets/OpenSans.ttf")).unwrap()
@@ -8,6 +15,10 @@ pub fn font() -> &'static Font {
     &FONT
 }
 
+/// Get an image texture from its name.
+///
+/// Images come from `../assets/pieces_png/` and are stored in a static [`LazyLock`] to prevent reinstantiation.
+/// They're stored and queried with a [`HashMap`].
 pub fn get_image_unchecked(name: &str) -> &Texture2D {
     macro_rules! get_piece_images {
         ( $( $x:expr ),* $(,)? ) => {

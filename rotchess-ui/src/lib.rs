@@ -1,9 +1,9 @@
-//! User interface code for all the non-chessboard stuff.
+//! User interface code.
 
 mod screens;
 use screens::*;
 
-pub mod common;
+mod common;
 
 pub struct Ui {
     curr_screen_id: ScreenId,
