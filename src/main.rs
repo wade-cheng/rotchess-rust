@@ -1,7 +1,7 @@
 use macroquad::prelude::*;
 
-use rotchess_window::window_conf::window_conf;
 use rotchess_ui::Ui;
+use rotchess_window::window_conf;
 
 #[macroquad::main(window_conf)]
 async fn main() {
