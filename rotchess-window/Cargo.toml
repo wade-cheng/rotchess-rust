@@ -4,6 +4,4 @@ version = "0.0.0-alpha"
 edition = "2024"
 
 [dependencies]
-macroquad = "0.4.14"
-rotchess-core = { path = "../rotchess-core" }
-rotchess-ui = { path = "../rotchess-ui" }
+macroquad = { workspace = true }

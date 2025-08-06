@@ -231,6 +231,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a651516ddc9168ebd67b24afd085a718be02f8858fe406591b013d101ce2f40"
 
 [[package]]
+name = "rotchess"
+version = "0.0.0-alpha"
+dependencies = [
+ "macroquad",
+ "rotchess-core",
+ "rotchess-ui",
+ "rotchess-window",
+]
+
+[[package]]
 name = "rotchess-core"
 version = "0.0.0-alpha"
 
@@ -247,8 +257,6 @@ name = "rotchess-window"
 version = "0.0.0-alpha"
 dependencies = [
  "macroquad",
- "rotchess-core",
- "rotchess-ui",
 ]
 
 [[package]]

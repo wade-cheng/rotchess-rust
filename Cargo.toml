@@ -1,3 +1,24 @@
 [workspace]
 resolver = "3"
 members = ["rotchess-window", "rotchess-core", "rotchess-ui"]
+
+[workspace.dependencies]
+rotchess-window = { path = "rotchess-window" }
+rotchess-core = { path = "rotchess-core" }
+rotchess-ui = { path = "rotchess-ui" }
+macroquad = "0.4.14"
+
+[package]
+name = "rotchess"
+version = "0.0.0-alpha"
+edition = "2024"
+
+[[bin]]
+name = "rotchess-rust"
+path = "src/main.rs"
+
+[dependencies]
+rotchess-window = { workspace = true }
+rotchess-core = { workspace = true }
+rotchess-ui = { workspace = true }
+macroquad = { workspace = true }
