@@ -54,7 +54,7 @@ pub fn window_conf() -> Conf {
     Conf {
         window_title: String::from("Rotating Chess"),
         window_height: 400,
-        window_width: 400,
+        window_width: 465,
         icon: Some(rotchess_icon()),
         sample_count: 0, // remove antialiasing
         high_dpi: true,

@@ -1,15 +1,13 @@
 pub mod game;
 pub mod load;
-pub mod multiplayer;
+pub mod lobby;
 pub mod settings;
-pub mod singleplayer;
 pub mod splash;
 
 pub use game::Game;
 pub use load::Load;
-pub use multiplayer::Multiplayer;
+pub use lobby::Lobby;
 pub use settings::Settings;
-pub use singleplayer::Singleplayer;
 pub use splash::Splash;
 
 #[repr(u8)]
@@ -17,8 +15,7 @@ pub use splash::Splash;
 pub enum ScreenId {
     Game,
     Splash,
-    Singleplayer,
-    Multiplayer,
+    Lobby,
     Load,
     Settings,
 }

@@ -8,18 +8,17 @@ mod common;
 pub struct Ui {
     curr_screen_id: ScreenId,
     global_data: GlobalData,
-    screen_pool: [Box<dyn Screen>; 6],
+    screen_pool: [Box<dyn Screen>; 5],
 }
 
 impl Default for Ui {
     fn default() -> Self {
-        let curr_screen_id = ScreenId::Game;
+        let curr_screen_id = ScreenId::Splash;
         let global_data = Default::default();
         let screen_pool = [
             Box::new(Game::new()) as Box<dyn Screen>,
             Box::new(Splash::new()) as Box<dyn Screen>,
-            Box::new(Singleplayer::new()) as Box<dyn Screen>,
-            Box::new(Multiplayer::new()) as Box<dyn Screen>,
+            Box::new(Lobby::new()) as Box<dyn Screen>,
             Box::new(Load::new()) as Box<dyn Screen>,
             Box::new(Settings::new()) as Box<dyn Screen>,
         ];

@@ -2,6 +2,7 @@ use std::f32::consts::TAU;
 
 use macroquad::audio::play_sound_once;
 use macroquad::prelude::*;
+use macroquad::ui::root_ui;
 use macroquad::{
     rand::{self, ChooseRandom},
     time,
@@ -213,6 +214,10 @@ impl Screen for Game {
 
     fn update(&mut self, _global_data: &mut GlobalData) -> Option<ScreenId> {
         self.update_runit_to_world_multiplier();
+
+        if root_ui().button(vec2(self.cnv_r(8.) + 10., 11.), "back") {
+            return Some(ScreenId::Splash);
+        }
 
         let (pixel_mouse_x, pixel_mouse_y) = mouse_position();
         let (mouse_x, mouse_y) = (self.cnv_w(pixel_mouse_x), self.cnv_w(pixel_mouse_y));
