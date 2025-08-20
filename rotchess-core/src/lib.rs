@@ -19,9 +19,6 @@
 //!   they're measured in radians, 0 at the positive x-axis, increasing anticlockwise.
 //! - rotchess-unit: an eighth of the side length of the board.
 
-pub mod emulator;
 pub mod floating_drift;
 pub mod piece;
 pub mod turn;
-
-pub use emulator::RotchessEmulator;

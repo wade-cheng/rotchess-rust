@@ -8,9 +8,11 @@ use macroquad::{
     time,
     window::{screen_height, screen_width},
 };
-use rotchess_core::emulator::{self, Event, ThingHappened, TravelKind};
+use rotchess_core::piece::Pieces;
+use rotchess_core::piece::TravelKind;
 use rotchess_core::piece::{PIECE_RADIUS, Piece};
-use rotchess_core::{RotchessEmulator, piece::Pieces};
+use rotchess_event_api::RotchessEmulator;
+use rotchess_event_api::{self, Event, ThingHappened};
 
 use crate::common::move_sound;
 
@@ -260,7 +262,7 @@ impl Screen for Game {
             self.chess.handle_event(Event::ButtonDown {
                 x: mouse_x,
                 y: mouse_y,
-                button: emulator::MouseButton::LEFT,
+                button: rotchess_event_api::MouseButton::LEFT,
             });
         }
 
@@ -268,7 +270,7 @@ impl Screen for Game {
             let thing_happened = self.chess.handle_event(Event::ButtonUp {
                 x: mouse_x,
                 y: mouse_y,
-                button: emulator::MouseButton::LEFT,
+                button: rotchess_event_api::MouseButton::LEFT,
             });
 
             if let Some(ThingHappened::Move(_, _, _)) | Some(ThingHappened::Rotate(_, _)) =
@@ -283,7 +285,7 @@ impl Screen for Game {
             self.chess.handle_event(Event::ButtonDown {
                 x: mouse_x,
                 y: mouse_y,
-                button: emulator::MouseButton::RIGHT,
+                button: rotchess_event_api::MouseButton::RIGHT,
             });
         }
 
@@ -291,7 +293,7 @@ impl Screen for Game {
             self.chess.handle_event(Event::ButtonUp {
                 x: mouse_x,
                 y: mouse_y,
-                button: emulator::MouseButton::RIGHT,
+                button: rotchess_event_api::MouseButton::RIGHT,
             });
         }
 

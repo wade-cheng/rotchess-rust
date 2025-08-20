@@ -1,18 +1,14 @@
-//! The main entrypoint for any rotchess user.
+//! An api wrapper around `rotchess-core` to add an event-based interface for playing a chess game.
 //!
-//! design doc:
-//! - on hovering over move/cap points, highlight if it's a possible move
-//! - only draw guides for non-jumpers (might be drawer's responsibility)
-//! - piece selection on mousedown
-//!   - but if piece was alr selected, or no action could be taken, deselect the only selected piece.
-//!   - hmm. wondering now, we could probably move only selected to a `Option<usize>` in each Pieces.
-//!   - but that raises the question, can we move everything GamePieceData related to Board?
-//! - drag move/cap point to rotate, or mouseup without having dragged to move (if was possible)
+//! If you're adding rotchess to a new medium, this api is probably the fastest way
+//! to do it, as opposed to hand coding your own wrapper around `rotchess-core`.
 
-use crate::{
-    piece::{Piece, PieceId, Pieces},
+use rotchess_core::{
+    piece::{Piece, PieceId, Pieces, TravelKind, TravelPoint},
     turn::Turns,
 };
+
+pub use rotchess_core::piece;
 
 /// Mouse buttons a chess board can respond to.
 ///
@@ -50,20 +46,16 @@ pub enum Event {
     MoveUnchecked(PieceId, f32, f32),
 }
 
-#[derive(PartialEq, Debug)]
-pub enum TravelKind {
-    Capture,
-    Move,
-}
-
-#[derive(Debug)]
-pub struct TravelPoint {
-    pub x: f32,
-    pub y: f32,
-    pub travelable: bool,
-    pub kind: TravelKind,
-}
-
+/// The main entrypoint for any rotchess user.
+///
+/// design doc:
+/// - on hovering over move/cap points, highlight if it's a possible move
+/// - only draw guides for non-jumpers (might be drawer's responsibility)
+/// - piece selection on mousedown
+///   - but if piece was alr selected, or no action could be taken, deselect the only selected piece.
+///   - hmm. wondering now, we could probably move only selected to a `Option<usize>` in each Pieces.
+///   - but that raises the question, can we move everything GamePieceData related to Board?
+/// - drag move/cap point to rotate, or mouseup without having dragged to move (if was possible)
 pub struct RotchessEmulator {
     /// A valid representation of travelpoints a user needs to draw iff we
     ///  update this every time a piece.core changes and `self.selected.is_some()`.
@@ -86,10 +78,10 @@ pub struct RotchessEmulator {
 
 /// Misc.
 impl RotchessEmulator {
-    /// Create an emulator with an empty board.
-    pub fn new() -> Self {
-        todo!()
-    }
+    // /// Create an emulator with an empty board.
+    // pub fn new() -> Self {
+    //     todo!()
+    // }
 
     /// Create an emulator with pieces.
     pub fn with(pieces: Pieces) -> Self {

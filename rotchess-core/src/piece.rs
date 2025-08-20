@@ -1,6 +1,6 @@
 use std::{collections::HashSet, f32::consts::PI, hash::Hash};
 
-use crate::{emulator::TravelKind, turn::Score};
+use crate::turn::Score;
 
 /// An iterable over the distances of a [`DistancesAngle`].
 ///
@@ -641,6 +641,20 @@ fn point_to_line_dist(
 ) -> f32 {
     f32::abs((end_x - start_x) * (point_y - start_y) - (point_x - start_x) * (end_y - start_y))
         / f32::sqrt((end_x - start_x).powi(2) + (end_y - start_y).powi(2))
+}
+
+#[derive(PartialEq, Debug)]
+pub enum TravelKind {
+    Capture,
+    Move,
+}
+
+#[derive(Debug)]
+pub struct TravelPoint {
+    pub x: f32,
+    pub y: f32,
+    pub travelable: bool,
+    pub kind: TravelKind,
 }
 
 /// An identifier used to find a piece within a [`Pieces`]

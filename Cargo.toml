@@ -1,12 +1,13 @@
 [workspace]
 resolver = "3"
-members = ["rotchess-window", "rotchess-core", "rotchess-ui"]
+members = ["rotchess-window", "rotchess-core", "rotchess-ui", "rotchess-event-api"]
 
 # these are the dependencies we want to keep the same across the workspace.
 [workspace.dependencies]
-rotchess-window = { path = "rotchess-window" }
 rotchess-core = { path = "rotchess-core" }
+rotchess-event-api = { path = "rotchess-event-api" }
 rotchess-ui = { path = "rotchess-ui" }
+rotchess-window = { path = "rotchess-window" }
 macroquad = { version = "0.4.14", features = ["audio"] }
 
 # everything below here is how we get src/main.rs compiling.

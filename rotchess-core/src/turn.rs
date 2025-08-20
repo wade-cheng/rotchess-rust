@@ -1,7 +1,4 @@
-use crate::{
-    emulator::TravelKind,
-    piece::{Pieces, Side},
-};
+use crate::piece::{Pieces, Side, TravelKind};
 
 pub struct Turns {
     working_board: Pieces,
