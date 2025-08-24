@@ -149,30 +149,12 @@ impl RotchessEmulator {
             .get(self.selected_piece.expect("Invariant"))
             .unwrap();
         self.travelpoints_buffer.clear();
-        for &(x, y) in piece.move_points_unchecked() {
+        for (tvk, x, y) in piece.travel_points_unchecked() {
             self.travelpoints_buffer.push(TravelPoint {
                 x,
                 y,
-                travelable: self.turns.working_board_ref().travelable(
-                    piece,
-                    x,
-                    y,
-                    TravelKind::Move,
-                ),
-                kind: TravelKind::Move,
-            });
-        }
-        for &(x, y) in piece.capture_points_unchecked() {
-            self.travelpoints_buffer.push(TravelPoint {
-                x,
-                y,
-                travelable: self.turns.working_board_ref().travelable(
-                    piece,
-                    x,
-                    y,
-                    TravelKind::Capture,
-                ),
-                kind: TravelKind::Capture,
+                travelable: self.turns.working_board_ref().travelable(piece, x, y, tvk),
+                kind: tvk,
             });
         }
     }

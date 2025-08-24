@@ -375,6 +375,12 @@ impl From<(&CorePieceData, &SecondaryPieceData)> for TertiaryPieceData {
 }
 
 /// A piece. Like from chess. Like a rook, or such.
+///
+/// Currently, a piece is represented by core, secondary, and tertiary data.
+///
+/// - core: the core definitions of a piece, from which the other data can be derived. This would be its position, angle, kind, and such.
+/// - secondary: uh hm. looks like we don't need this one actually. we should make this static somehow.
+/// - tertiary: yuh. meat of the algo. we are able to cache the points we can move to.
 #[derive(Clone)]
 pub struct Piece {
     core: CorePieceData,
@@ -533,7 +539,20 @@ impl Piece {
         }
     }
 
-    pub fn capture_points_unchecked(&self) -> impl Iterator<Item = &(f32, f32)> {
+    /// Get the points this piece could travel to, not accounting for pathing.
+    ///
+    /// This function will panic if this piece [`Self::needs_init`]. This function will return
+    /// outdated information if the interior data is not updated.
+    pub fn travel_points_unchecked(&self) -> impl Iterator<Item = (TravelKind, f32, f32)> {
+        self.move_points_unchecked()
+            .map(|&(x, y)| (TravelKind::Move, x, y))
+            .chain(
+                self.capture_points_unchecked()
+                    .map(|&(x, y)| (TravelKind::Capture, x, y)),
+            )
+    }
+
+    fn capture_points_unchecked(&self) -> impl Iterator<Item = &(f32, f32)> {
         let tertiary = self
             .tertiary
             .as_ref()
@@ -542,7 +561,7 @@ impl Piece {
         tertiary.capture_points.iter()
     }
 
-    pub fn move_points_unchecked(&self) -> impl Iterator<Item = &(f32, f32)> {
+    fn move_points_unchecked(&self) -> impl Iterator<Item = &(f32, f32)> {
         let tertiary = self
             .tertiary
             .as_ref()
@@ -646,7 +665,7 @@ fn point_to_line_dist(
         / f32::sqrt((end_x - start_x).powi(2) + (end_y - start_y).powi(2))
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum TravelKind {
     Capture,
     Move,
@@ -755,6 +774,10 @@ impl Pieces {
 
     pub fn inner_ref(&self) -> &[Piece] {
         &self.inner
+    }
+
+    pub fn inner_mut(&mut self) -> &mut Vec<Piece> {
+        &mut self.inner
     }
 
     /// Inits (or reinits) every piece's auxiliary data.

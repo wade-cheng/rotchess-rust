@@ -1,4 +1,4 @@
-use crate::piece::{Pieces, Side, TravelKind};
+use crate::piece::{Pieces, Side};
 
 pub struct Turns {
     working_board: Pieces,
@@ -259,16 +259,8 @@ impl Turns {
             if piece.side() != self.to_move {
                 continue;
             }
-            for (tvk, x, y) in piece
-                .move_points_unchecked()
-                .map(|&(x, y)| (TravelKind::Move, x, y))
-                .chain(
-                    piece
-                        .capture_points_unchecked()
-                        .map(|&(x, y)| (TravelKind::Capture, x, y)),
-                )
-            {
-                if self.working_board_ref().travelable(piece, x, y, tvk) {
+            for (tvk, x, y) in piece.travel_points_unchecked() {
+                if self.working_board_ref().travelable(&piece, x, y, tvk) {
                     ans.push(EngineMove {
                         travel: (i, x, y),
                         rotate: (i, piece.angle()),
