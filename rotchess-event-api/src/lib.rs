@@ -153,7 +153,11 @@ impl RotchessEmulator {
             self.travelpoints_buffer.push(TravelPoint {
                 x,
                 y,
-                travelable: self.turns.working_board_ref().travelable(piece, x, y, tvk),
+                travelable: self
+                    .turns
+                    .working_board_ref()
+                    .travelable(piece, x, y, tvk)
+                    .is_some(),
                 kind: tvk,
             });
         }
@@ -327,14 +331,16 @@ impl RotchessEmulator {
                         let piece_id = self // the idx of the piece that moves
                             .selected_piece
                             .expect("Invariant of selected_travelpoint.issome");
-                        let new_piece_idx = pieces.travel(piece_id, tp_x, tp_y);
-                        self.selected_piece = Some(new_piece_idx);
+                        let piece_color_that_just_moved =
+                            pieces.get(piece_id).expect("exists").side();
+                        pieces.travel(piece_id, tp_x, tp_y);
+                        self.selected_piece = Some(piece_id);
                         self.update_travelpoints_unchecked();
                         self.selected_piece = None;
                         self.selected_travelpoint = None;
                         self.turns.save_turn();
                         self.turns
-                            .set_to_move(self.pieces()[new_piece_idx].side().toggle());
+                            .set_to_move(piece_color_that_just_moved.toggled());
                         return Some(ThingHappened::Move(piece_id, tp_x, tp_y));
                     }
                     self.selected_travelpoint = None;
@@ -347,12 +353,17 @@ impl RotchessEmulator {
                     let piece_id = self
                         .selected_piece
                         .expect("Invariant of sel travelpt.is_some");
+                    let selected_piece = self
+                        .turns
+                        .working_board_ref()
+                        .get(piece_id)
+                        .expect("exists");
+                    let side = selected_piece.side();
+                    let angle = selected_piece.angle();
 
-                    self.turns.set_to_move(self.pieces()[piece_id].side());
-                    let r = self.pieces()[piece_id].angle();
-                    self.turns
-                        .set_to_move(self.pieces()[piece_id].side().toggle());
-                    return Some(ThingHappened::Rotate(piece_id, r));
+                    self.turns.set_to_move(side);
+                    self.turns.set_to_move(side.toggled());
+                    return Some(ThingHappened::Rotate(piece_id, angle));
                 }
 
                 None
@@ -391,14 +402,20 @@ impl RotchessEmulator {
                      you see this error message."
                 );
 
+                let selected_piece = self
+                    .turns
+                    .working_board_ref()
+                    .get(piece_id)
+                    .expect("exists");
+                let side = selected_piece.side();
+
                 self.turns
                     .working_board_mut()
                     .get_mut(piece_id)
                     .expect("Invariant of unchecked")
                     .set_angle(r);
                 self.turns.save_turn();
-                self.turns
-                    .set_to_move(self.pieces()[piece_id].side().toggle());
+                self.turns.set_to_move(side.toggled());
                 None
             }
             Event::MoveUnchecked(piece_id, x, y) => {
@@ -411,14 +428,20 @@ impl RotchessEmulator {
                      you see this error message."
                 );
 
+                let selected_piece = self
+                    .turns
+                    .working_board_ref()
+                    .get(piece_id)
+                    .expect("exists");
+                let side = selected_piece.side();
+
                 let pieces = &mut self.turns.working_board_mut();
-                let new_piece_idx = pieces.travel(piece_id, x, y);
-                self.selected_piece = Some(new_piece_idx);
+                pieces.travel(piece_id, x, y);
+                self.selected_piece = Some(piece_id);
                 self.update_travelpoints_unchecked();
                 self.selected_piece = None;
                 self.turns.save_turn();
-                self.turns
-                    .set_to_move(self.pieces()[piece_id].side().toggle());
+                self.turns.set_to_move(side.toggled());
                 None
             }
             _ => None,
@@ -428,8 +451,8 @@ impl RotchessEmulator {
 
 /// Helpful functions for the draw portion of a game loop implementing rotchess.
 impl RotchessEmulator {
-    pub fn pieces(&self) -> &[Piece] {
-        self.turns.working_board_ref().inner_ref()
+    pub fn pieces(&self) -> impl Iterator<Item = &Piece> {
+        self.turns.working_board_ref().board_pieces()
     }
 
     /// Whether there is a selected piece.

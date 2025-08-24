@@ -1,4 +1,4 @@
-use crate::piece::{Pieces, Side};
+use crate::piece::{PieceId, Pieces, Side};
 
 pub struct Turns {
     working_board: Pieces,
@@ -88,10 +88,43 @@ impl Turns {
     }
 }
 
-/// A move as represented by our engine.
-struct EngineMove {
-    travel: (usize, f32, f32),
-    rotate: (usize, f32),
+/// The travel phase of a rotchess move.
+pub struct TravelPhase {
+    /// The piece that travels
+    piece: PieceId,
+    /// Travels to here
+    dest: (f32, f32),
+    /// (n, arr) s.t. arr[0..n] are the pieces captured. accessing arr[n..] is undefined.
+    captures: (usize, [PieceId; 4]),
+}
+
+impl TravelPhase {
+    pub fn new(piece: PieceId, dest: (f32, f32), captures: (usize, [PieceId; 4])) -> Self {
+        Self {
+            piece,
+            dest,
+            captures,
+        }
+    }
+
+    pub fn piece(&self) -> PieceId {
+        self.piece
+    }
+
+    pub fn dest(&self) -> (f32, f32) {
+        self.dest
+    }
+
+    pub fn captures(&self) -> &[PieceId] {
+        let (len, buf) = &self.captures;
+        &buf[0..*len]
+    }
+}
+
+/// A rotchess move.
+pub struct Move {
+    pub travel: TravelPhase,
+    pub rotate: (PieceId, f32),
 }
 
 /// Score for how good a position is as a float from positive to negative infinity.
@@ -110,7 +143,7 @@ impl Turns {
             Side::White => 1.,
         };
         let mut ans = 0.0;
-        for piece in self.working_board.inner_ref() {
+        for piece in self.working_board.board_pieces() {
             // add score value of each piece
             ans +=
                 mult * match piece.side() {
@@ -173,7 +206,7 @@ impl Turns {
     /// Set `self.to_move` with [`Self::set_to_move`]
     pub fn make_best_move(&mut self) {
         let mut best_score: Score = Score::NEG_INFINITY;
-        let mut best_move: Option<EngineMove> = None;
+        let mut best_move: Option<Move> = None;
 
         self.working_board.init_all_auxiliary_data();
         self.turns[self.curr_turn].init_all_auxiliary_data();
@@ -204,7 +237,7 @@ impl Turns {
     /// Reverses effects of [`apply`][`Turns::apply`].
     fn unapply(&mut self) {
         self.prev().expect("There will be a prev move.");
-        self.to_move = self.to_move.toggle();
+        self.to_move = self.to_move.toggled();
     }
 
     /// Applies a move to the current board, saves the turn, and toggles the side to_move.
@@ -212,11 +245,13 @@ impl Turns {
     /// Since we save, this will remove future turns that were saved!
     /// Also, the entire turn is saved as one turn, not two, which would
     /// happen if a user were to move.
-    fn apply(&mut self, move_: &EngineMove) {
+    ///
+    /// Also also we just trust the move. Full trust. It works.
+    fn apply(&mut self, move_: &Move) {
         // println!("tomove is {:?}", self.to_move);
         debug_assert_eq!(
             self.working_board
-                .get_mut(move_.travel.0)
+                .get_mut(move_.travel.piece)
                 .expect("EngineMove supplied wasn't valid")
                 .side(),
             self.to_move
@@ -229,41 +264,28 @@ impl Turns {
             self.to_move
         );
 
-        let (i, x, y) = move_.travel;
-
-        let i = self.working_board.travel(i, x, y);
-        self.working_board
-            .get_mut(i)
-            .expect("EngineMove supplied wasn't valid")
-            // .init_auxiliary_data();
-            .update_travel_points_unchecked();
-
-        let (_, r) = move_.rotate;
-        self.working_board
-            .get_mut(i)
-            .expect("EngineMove supplied wasn't valid")
-            .set_angle(r);
+        self.working_board.make_move(move_);
 
         self.save_turn();
-        self.to_move = self.to_move.toggle();
+        self.to_move = self.to_move.toggled();
     }
 
     /// Return all possible moves that the current player can make.
     ///
     /// Current player defined by `self.to_move`.
-    fn all_moves(&mut self) -> Vec<EngineMove> {
+    fn all_moves(&mut self) -> Vec<Move> {
         self.working_board.init_all_auxiliary_data();
 
         let mut ans = vec![];
-        for (i, piece) in self.working_board.inner_ref().iter().enumerate() {
+        for piece in self.working_board.board_pieces() {
             if piece.side() != self.to_move {
                 continue;
             }
             for (tvk, x, y) in piece.travel_points_unchecked() {
-                if self.working_board_ref().travelable(&piece, x, y, tvk) {
-                    ans.push(EngineMove {
-                        travel: (i, x, y),
-                        rotate: (i, piece.angle()),
+                if let Some(travel) = self.working_board_ref().travelable(&piece, x, y, tvk) {
+                    ans.push(Move {
+                        travel,
+                        rotate: (piece.id(), piece.angle()),
                     });
                 }
             }

@@ -1,6 +1,6 @@
 use std::{collections::HashSet, f32::consts::PI, hash::Hash};
 
-use crate::turn::Score;
+use crate::turn::{Move, Score, TravelPhase};
 
 /// An iterable over the distances of a [`DistancesAngle`].
 ///
@@ -140,7 +140,7 @@ impl Side {
         }
     }
 
-    pub fn toggle(&self) -> Self {
+    pub fn toggled(&self) -> Self {
         match self {
             Side::Black => Side::White,
             Side::White => Side::Black,
@@ -235,6 +235,7 @@ impl PieceKind {
     }
 
     fn capture_das(&self) -> Vec<DistancesAngle> {
+        // TODO: these will somehow want to return impl iterator distancesangle...
         let mut ans = vec![];
         match self {
             PieceKind::Pawn => {
@@ -367,6 +368,7 @@ impl From<&CorePieceData> for TravelPointData {
 /// - tertiary: yuh. meat of the algo. we are able to cache the points we can move to.
 #[derive(Clone)]
 pub struct Piece {
+    id: PieceId,
     core: CorePieceData,
     tvp_cache: Option<TravelPointData>,
 }
@@ -396,8 +398,9 @@ impl Eq for Piece {}
 
 /// Instantiation.
 impl Piece {
-    pub fn new(center: (f32, f32), angle: f32, side: Side, kind: PieceKind) -> Self {
+    pub fn new(id: PieceId, center: (f32, f32), angle: f32, side: Side, kind: PieceKind) -> Self {
         Self {
+            id,
             core: CorePieceData {
                 center,
                 angle,
@@ -409,9 +412,10 @@ impl Piece {
     }
 
     /// From tile indices. i.e. tile (0,0) is center (0.5, 0.5).
-    pub fn from_tile(tile: (u8, u8), angle: f32, side: Side, kind: PieceKind) -> Self {
+    pub fn from_tile(id: PieceId, tile: (u8, u8), angle: f32, side: Side, kind: PieceKind) -> Self {
         let (x, y) = tile;
         Self {
+            id,
             core: CorePieceData {
                 center: (x as f32 + 0.5, y as f32 + 0.5),
                 angle,
@@ -425,13 +429,16 @@ impl Piece {
 
 /// Trivial getters and setters.
 impl Piece {
+    pub fn id(&self) -> PieceId {
+        self.id
+    }
+
     pub fn center(&self) -> (f32, f32) {
         self.core.center
     }
 
-    pub fn set_center(&mut self, x: f32, y: f32) {
-        self.core.center.0 = x;
-        self.core.center.1 = y;
+    pub fn set_center(&mut self, center: (f32, f32)) {
+        self.core.center = center;
     }
 
     pub fn x(&self) -> f32 {
@@ -660,7 +667,7 @@ pub type PieceId = usize;
 /// - pieces will not overlap
 #[derive(Clone)]
 pub struct Pieces {
-    inner: Vec<Piece>,
+    inner: Vec<(bool, Piece)>,
 }
 
 impl Pieces {
@@ -680,14 +687,46 @@ impl Pieces {
         ];
 
         for i in 0..8 {
-            inner.push(Piece::from_tile((i, 1), -PI, Side::Black, PieceKind::Pawn));
-            inner.push(Piece::from_tile((i, 6), 0., Side::White, PieceKind::Pawn));
+            inner.push(Piece::from_tile(
+                i * 2,
+                (i as u8, 1),
+                -PI,
+                Side::Black,
+                PieceKind::Pawn,
+            ));
+            inner.push(Piece::from_tile(
+                i * 2 + 1,
+                (i as u8, 6),
+                0.,
+                Side::White,
+                PieceKind::Pawn,
+            ));
         }
 
         for (i, kind) in ORDER.iter().enumerate() {
-            inner.push(Piece::from_tile((i as u8, 0), -PI, Side::Black, *kind));
-            inner.push(Piece::from_tile((i as u8, 7), 0., Side::White, *kind));
+            inner.push(Piece::from_tile(
+                i * 2 + 16,
+                (i as u8, 0),
+                -PI,
+                Side::Black,
+                *kind,
+            ));
+            inner.push(Piece::from_tile(
+                i * 2 + 17,
+                (i as u8, 7),
+                0.,
+                Side::White,
+                *kind,
+            ));
         }
+
+        debug_assert!({
+            // piece ids must be their indices
+            let all_piece_ids: Vec<PieceId> = inner.iter().map(|piece| piece.id()).collect();
+            all_piece_ids == (0..all_piece_ids.len()).collect::<Vec<PieceId>>()
+        });
+
+        let inner = inner.into_iter().map(|piece| (true, piece)).collect();
 
         Self { inner }
     }
@@ -721,44 +760,107 @@ impl Pieces {
         let order = ordering.map(|i| pieces[i]);
 
         for i in 0..8 {
-            inner.push(Piece::from_tile((i, 1), -PI, Side::Black, PieceKind::Pawn));
-            inner.push(Piece::from_tile((i, 6), 0., Side::White, PieceKind::Pawn));
+            inner.push(Piece::from_tile(
+                i * 2,
+                (i as u8, 1),
+                -PI,
+                Side::Black,
+                PieceKind::Pawn,
+            ));
+            inner.push(Piece::from_tile(
+                i * 2 + 1,
+                (i as u8, 6),
+                0.,
+                Side::White,
+                PieceKind::Pawn,
+            ));
         }
 
         for (i, kind) in order.iter().enumerate() {
-            inner.push(Piece::from_tile((i as u8, 0), -PI, Side::Black, *kind));
-            inner.push(Piece::from_tile((i as u8, 7), 0., Side::White, *kind));
+            inner.push(Piece::from_tile(
+                i * 2 + 16,
+                (i as u8, 0),
+                -PI,
+                Side::Black,
+                *kind,
+            ));
+            inner.push(Piece::from_tile(
+                i * 2 + 17,
+                (i as u8, 7),
+                0.,
+                Side::White,
+                *kind,
+            ));
         }
+
+        debug_assert!({
+            // piece ids must be their indices
+            let all_piece_ids: Vec<PieceId> = inner.iter().map(|piece| piece.id()).collect();
+            all_piece_ids == (0..all_piece_ids.len()).collect::<Vec<PieceId>>()
+        });
+
+        let inner = inner.into_iter().map(|piece| (true, piece)).collect();
 
         Self { inner }
     }
 
+    pub fn board_pieces(&self) -> impl Iterator<Item = &Piece> {
+        self.inner
+            .iter()
+            .filter_map(|&(alive, ref piece)| alive.then(|| piece))
+    }
+
+    pub fn board_pieces_mut(&mut self) -> impl Iterator<Item = &mut Piece> {
+        self.inner
+            .iter_mut()
+            .filter_map(|&mut (alive, ref mut piece)| alive.then(|| piece))
+    }
+
+    pub fn make_move(&mut self, move_: &Move) {
+        let travel_piece = self.get_mut(move_.travel.piece()).expect("exists");
+
+        travel_piece.set_center(move_.travel.dest());
+        for pieceid in move_.travel.captures() {
+            // not-alive the piece
+            self.inner[*pieceid].0 = false;
+        }
+
+        let (i, r) = move_.rotate;
+        let move_piece = self.get_mut(i).expect("exists");
+        move_piece.set_angle(r);
+    }
+
     /// Get the piece that collides with `(x, y)`, if it exists.
     pub fn get_id(&self, x: f32, y: f32) -> Option<PieceId> {
-        self.inner.iter().position(|piece| piece.collidepoint(x, y))
+        for piece in self.board_pieces() {
+            if piece.collidepoint(x, y) {
+                return Some(piece.id());
+            }
+        }
+        None
     }
 
     /// Get the piece with an id, if the piece exists.
     pub fn get(&self, id: PieceId) -> Option<&Piece> {
-        self.inner.get(id)
+        if let Some((alive, piece)) = self.inner.get(id)
+            && *alive
+        {
+            return Some(piece);
+        }
+        None
     }
 
     /// Get a mutable piece given an id, if the piece exists.
     pub fn get_mut(&mut self, id: PieceId) -> Option<&mut Piece> {
-        self.inner.get_mut(id)
-    }
-
-    pub fn inner_ref(&self) -> &[Piece] {
-        &self.inner
-    }
-
-    pub fn inner_mut(&mut self) -> &mut Vec<Piece> {
-        &mut self.inner
+        if id < self.inner.len() && self.inner[id].0 {
+            return Some(&mut self.inner[id].1);
+        }
+        None
     }
 
     /// Inits (or reinits) every piece's auxiliary data.
     pub fn init_all_auxiliary_data(&mut self) {
-        for piece in &mut self.inner {
+        for piece in self.board_pieces_mut() {
             piece.init_auxiliary_data();
         }
     }
@@ -768,32 +870,51 @@ impl Pieces {
     /// # Warnings
     ///
     /// This may shuffle piece identifiers! Returns the piece's new ID..
-    pub fn travel(&mut self, id: PieceId, x: f32, y: f32) -> PieceId {
-        let orig_piece_center = self.inner[id].center();
-        self.inner.retain(|piece| !piece.collidepiece(x, y));
-        let new_id = self
-            .inner
-            .iter()
-            .position(|p| p.center() == orig_piece_center)
-            .expect("Should still exist.");
+    pub fn travel(&mut self, id: PieceId, x: f32, y: f32) {
+        for &mut (ref mut alive, ref mut piece) in self.inner.iter_mut() {
+            if *alive && piece.collidepiece(x, y) {
+                *alive = false;
+            }
+        }
 
-        let piece = &mut self.inner[new_id];
+        let piece = &mut self.inner[id].1;
         piece.set_x(x);
         piece.set_y(y);
         if Piece::should_promote(piece.kind(), piece.side(), y) {
             piece.set_kind(PieceKind::Queen);
             piece.init_auxiliary_data();
         }
-
-        new_id
     }
 
-    pub fn travelable(&self, piece: &Piece, x: f32, y: f32, kind: TravelKind) -> bool {
+    pub fn travelable(
+        &self,
+        piece: &Piece,
+        x: f32,
+        y: f32,
+        kind: TravelKind,
+    ) -> Option<TravelPhase> {
         // println!("checking travelable points");
-        let mut pieces_overlapping_endpoint = HashSet::new();
+        let mut pieces_overlapping_endpoint: HashSet<&Piece> = HashSet::new();
+
+        /// Get the answer for Some cases of travelable.
+        ///
+        /// We move things, so this must be used right before returning.
+        macro_rules! travelphase_answer {
+            () => {{
+                let len = pieces_overlapping_endpoint.len();
+                let mut capture_ids: [usize; 4] = [0; 4];
+                for (i, piece) in pieces_overlapping_endpoint.into_iter().enumerate() {
+                    if i == 4 {
+                        panic!("How in the world did you manage to capture more than four pieces?");
+                    }
+                    capture_ids[i] = piece.id();
+                }
+                TravelPhase::new(piece.id(), (x, y), (len, capture_ids))
+            }};
+        }
 
         // disallow capturing own side. also find which pieces overlap the endpoint
-        for other_piece in &self.inner {
+        for other_piece in self.board_pieces() {
             if other_piece == piece {
                 debug_assert!(!piece.needs_init());
                 continue;
@@ -803,7 +924,7 @@ impl Pieces {
                 pieces_overlapping_endpoint.insert(other_piece);
 
                 if other_piece.side() == piece.side() {
-                    return false;
+                    return None;
                 }
             }
         }
@@ -812,15 +933,19 @@ impl Pieces {
             match kind {
                 TravelKind::Capture => {
                     if !pieces_overlapping_endpoint.is_empty() {
-                        return true;
+                        return Some(travelphase_answer!());
                     }
                 }
-                TravelKind::Move => return pieces_overlapping_endpoint.is_empty(),
+                TravelKind::Move => {
+                    return pieces_overlapping_endpoint
+                        .is_empty()
+                        .then(|| travelphase_answer!());
+                }
             };
         }
 
         let mut in_the_way = 0;
-        for other_piece in &self.inner {
+        for other_piece in self.board_pieces() {
             if other_piece == piece {
                 continue;
             }
@@ -845,7 +970,7 @@ impl Pieces {
         //     pieces_overlapping_endpoint.len()
         // );
         if in_the_way > 0 {
-            return false;
+            return None;
         }
 
         debug_assert!(
@@ -854,8 +979,12 @@ impl Pieces {
                 .all(|other_piece| other_piece.side() != piece.side())
         );
         match kind {
-            TravelKind::Capture => !pieces_overlapping_endpoint.is_empty(),
-            TravelKind::Move => pieces_overlapping_endpoint.is_empty(),
+            TravelKind::Capture => {
+                (!pieces_overlapping_endpoint.is_empty()).then(|| travelphase_answer!())
+            }
+            TravelKind::Move => pieces_overlapping_endpoint
+                .is_empty()
+                .then(|| travelphase_answer!()),
         }
     }
 }
