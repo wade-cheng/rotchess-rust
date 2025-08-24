@@ -92,16 +92,37 @@ impl Turns {
 pub struct TravelPhase {
     /// The piece that travels
     piece: PieceId,
+    /// Travels from here (must be equal to `piece.center()` on init)
+    src: (f32, f32),
     /// Travels to here
     dest: (f32, f32),
     /// (n, arr) s.t. arr[0..n] are the pieces captured. accessing arr[n..] is undefined.
     captures: (usize, [PieceId; 4]),
 }
 
+pub struct RotationPhase {
+    /// The piece that rotates.
+    pub piece: PieceId,
+    /// Rotates from this angle. (must be equal to `piece.angle()` on init)
+    pub src: f32,
+    /// Rotate to this angle.
+    pub dest: f32,
+}
+
 impl TravelPhase {
-    pub fn new(piece: PieceId, dest: (f32, f32), captures: (usize, [PieceId; 4])) -> Self {
+    /// Create a new TravelPhase for a rotating chess move.
+    ///
+    /// `piece`, `src`, and `dest` are the piece and its source/destination centers. `captures` is a `(n, arr)` such that
+    /// `arr[0..n]` are the pieces captured with this travel, and accesses in `arr[n..]` is undefined.
+    pub fn new(
+        piece: PieceId,
+        src: (f32, f32),
+        dest: (f32, f32),
+        captures: (usize, [PieceId; 4]),
+    ) -> Self {
         Self {
             piece,
+            src,
             dest,
             captures,
         }
@@ -122,9 +143,11 @@ impl TravelPhase {
 }
 
 /// A rotchess move.
+///
+/// These should capture both the forward and backward direction move.
 pub struct Move {
     pub travel: TravelPhase,
-    pub rotate: (PieceId, f32),
+    pub rotate: RotationPhase,
 }
 
 /// Score for how good a position is as a float from positive to negative infinity.
@@ -258,7 +281,7 @@ impl Turns {
         );
         debug_assert_eq!(
             self.working_board
-                .get_mut(move_.rotate.0)
+                .get_mut(move_.rotate.piece)
                 .expect("EngineMove supplied wasn't valid")
                 .side(),
             self.to_move
@@ -285,7 +308,11 @@ impl Turns {
                 if let Some(travel) = self.working_board_ref().travelable(&piece, x, y, tvk) {
                     ans.push(Move {
                         travel,
-                        rotate: (piece.id(), piece.angle()),
+                        rotate: RotationPhase {
+                            piece: piece.id(),
+                            src: piece.angle(),
+                            dest: piece.angle(),
+                        },
                     });
                 }
             }

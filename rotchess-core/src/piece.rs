@@ -825,9 +825,8 @@ impl Pieces {
             self.inner[*pieceid].0 = false;
         }
 
-        let (i, r) = move_.rotate;
-        let move_piece = self.get_mut(i).expect("exists");
-        move_piece.set_angle(r);
+        let move_piece = self.get_mut(move_.rotate.piece).expect("exists");
+        move_piece.set_angle(move_.rotate.dest);
     }
 
     /// Get the piece that collides with `(x, y)`, if it exists.
@@ -909,7 +908,7 @@ impl Pieces {
                     }
                     capture_ids[i] = piece.id();
                 }
-                TravelPhase::new(piece.id(), (x, y), (len, capture_ids))
+                TravelPhase::new(piece.id(), piece.center(), (x, y), (len, capture_ids))
             }};
         }
 
