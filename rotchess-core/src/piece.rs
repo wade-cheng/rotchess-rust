@@ -234,7 +234,7 @@ impl PieceKind {
         }
     }
 
-    fn get_capture_das(&self) -> Vec<DistancesAngle> {
+    fn capture_das(&self) -> Vec<DistancesAngle> {
         let mut ans = vec![];
         match self {
             PieceKind::Pawn => {
@@ -264,7 +264,7 @@ impl PieceKind {
         ans
     }
 
-    fn get_move_das(&self) -> Vec<DistancesAngle> {
+    fn move_das(&self) -> Vec<DistancesAngle> {
         let mut ans = vec![];
         match self {
             PieceKind::Pawn => ans.push(DistancesAngle::repeated(1., 1., 2, 0.)),
@@ -328,47 +328,31 @@ impl PartialEq for CorePieceData {
 }
 impl Eq for CorePieceData {}
 
-/// Delayable piece data.
-///
-/// Some piece data will only be created (un-None'd) when the piece is first moved.
-/// this speeds up loading a game save LOTS.
-/// so, we require as an invariant that self.init() is called sometime before any
-/// forbidden methods are called. this should be enforced with assertions.
-/// this can (and probably is) done when a piece is clicked in normal game code,
-/// but for test code we need to hack it in somewhere else that's intuitive.
-#[derive(Debug, Clone)]
-struct SecondaryPieceData {
-    /// set by init_movement
-    capture_das: Vec<DistancesAngle>,
-    /// set by init_movement
-    move_das: Vec<DistancesAngle>,
-}
-
-impl From<&CorePieceData> for SecondaryPieceData {
-    fn from(core: &CorePieceData) -> Self {
-        Self {
-            capture_das: core.kind.get_capture_das(),
-            move_das: core.kind.get_move_das(),
-        }
-    }
-}
-
 #[derive(Clone)]
-struct TertiaryPieceData {
+struct TravelPointData {
     /// set by init_capture_points
     capture_points: Vec<(f32, f32)>,
     /// set by init_move_points
     move_points: Vec<(f32, f32)>,
 }
 
-impl From<(&CorePieceData, &SecondaryPieceData)> for TertiaryPieceData {
-    fn from((core, sec): (&CorePieceData, &SecondaryPieceData)) -> Self {
-        let mut capture_points = vec![];
+impl From<&CorePieceData> for TravelPointData {
+    fn from(core: &CorePieceData) -> Self {
+        let mut cap_points = vec![];
         let mut move_points = vec![];
-        Piece::extend_with_drawable_points(core, &mut capture_points, sec.capture_das.iter());
-        Piece::extend_with_drawable_points(core, &mut move_points, sec.move_das.iter());
+        Piece::extend_with_drawable_points(
+            core,
+            &mut cap_points,
+            core.kind.capture_das().into_iter(),
+        );
+        Piece::extend_with_drawable_points(
+            core,
+            &mut move_points,
+            core.kind.move_das().into_iter(),
+        );
+
         Self {
-            capture_points,
+            capture_points: cap_points,
             move_points,
         }
     }
@@ -384,8 +368,7 @@ impl From<(&CorePieceData, &SecondaryPieceData)> for TertiaryPieceData {
 #[derive(Clone)]
 pub struct Piece {
     core: CorePieceData,
-    secondary: Option<SecondaryPieceData>,
-    tertiary: Option<TertiaryPieceData>,
+    tvp_cache: Option<TravelPointData>,
 }
 
 impl std::fmt::Display for Piece {
@@ -421,8 +404,7 @@ impl Piece {
                 side,
                 kind,
             },
-            secondary: None,
-            tertiary: None,
+            tvp_cache: None,
         }
     }
 
@@ -436,8 +418,7 @@ impl Piece {
                 side,
                 kind,
             },
-            secondary: None,
-            tertiary: None,
+            tvp_cache: None,
         }
     }
 }
@@ -490,7 +471,7 @@ impl Piece {
     }
 
     pub fn needs_init(&self) -> bool {
-        self.secondary.is_none() || self.tertiary.is_none()
+        self.tvp_cache.is_none()
     }
 }
 
@@ -554,7 +535,7 @@ impl Piece {
 
     fn capture_points_unchecked(&self) -> impl Iterator<Item = &(f32, f32)> {
         let tertiary = self
-            .tertiary
+            .tvp_cache
             .as_ref()
             .expect("Invariant was that delayed is Some.");
 
@@ -563,7 +544,7 @@ impl Piece {
 
     fn move_points_unchecked(&self) -> impl Iterator<Item = &(f32, f32)> {
         let tertiary = self
-            .tertiary
+            .tvp_cache
             .as_ref()
             .expect("Invariant was that delayed is Some.");
 
@@ -571,11 +552,7 @@ impl Piece {
     }
 
     pub fn init_auxiliary_data(&mut self) {
-        self.secondary = Some(SecondaryPieceData::from(&self.core));
-        self.tertiary = Some(TertiaryPieceData::from((
-            &self.core,
-            self.secondary.as_ref().expect("We just created this."),
-        )));
+        self.tvp_cache = Some(TravelPointData::from(&self.core));
     }
 
     pub fn update_travel_points_unchecked(&mut self) {
@@ -585,23 +562,22 @@ impl Piece {
 
     /// Update self's capture points with the drawable DistancesAngles.
     fn update_capture_points_unchecked(&mut self) {
+        let capture_das = self.kind().capture_das().into_iter();
         let capture_points: &mut Vec<(f32, f32)> =
-            &mut self.tertiary.as_mut().expect("Invariant.").capture_points;
-        let capture_das: &Vec<DistancesAngle> =
-            &self.secondary.as_ref().expect("Invariant.").capture_das;
+            &mut self.tvp_cache.as_mut().expect("Invariant.").capture_points;
 
         capture_points.clear();
-        Piece::extend_with_drawable_points(&self.core, capture_points, capture_das.iter());
+        Piece::extend_with_drawable_points(&self.core, capture_points, capture_das);
     }
 
     /// Update self's move points with the drawable DistancesAngles.
     fn update_move_points_unchecked(&mut self) {
+        let move_das = self.kind().move_das().into_iter();
         let move_points: &mut Vec<(f32, f32)> =
-            &mut self.tertiary.as_mut().expect("Invariant.").move_points;
-        let move_das: &Vec<DistancesAngle> = &self.secondary.as_ref().expect("Invariant.").move_das;
+            &mut self.tvp_cache.as_mut().expect("Invariant.").move_points;
 
         move_points.clear();
-        Piece::extend_with_drawable_points(&self.core, move_points, move_das.iter());
+        Piece::extend_with_drawable_points(&self.core, move_points, move_das);
     }
 
     /// Extend points with the drawable points from each DA in das.
@@ -612,10 +588,10 @@ impl Piece {
     /// define a chess piece that moves infinitely without leaving the board. An error
     /// arising from this should become pretty obvious. "Oh, hey, I just added Mr. moves
     /// around in circles, and for some reason my game freezes whenever I try to use him."
-    fn extend_with_drawable_points<'a>(
+    fn extend_with_drawable_points(
         core: &CorePieceData,
         points: &mut Vec<(f32, f32)>,
-        das: impl Iterator<Item = &'a DistancesAngle>,
+        das: impl Iterator<Item = DistancesAngle>,
     ) {
         for da in das {
             for (x, y) in da.get_offsets(core.angle + PI / 2.) {
