@@ -30,10 +30,6 @@ impl Turns {
         self.curr_turn
     }
 
-    pub fn inner_ref(&self) -> &Vec<Pieces> {
-        &self.turns
-    }
-
     pub fn working_board_ref(&self) -> &Pieces {
         &self.working_board
     }
@@ -98,7 +94,7 @@ struct EngineMove {
     rotate: (usize, f32),
 }
 
-/// Score for how good a position is.
+/// Score for how good a position is as a float from positive to negative infinity.
 pub type Score = f32;
 /// depth of negamax search in plies
 const DEPTH: usize = 3;
@@ -172,7 +168,9 @@ impl Turns {
         best_score
     }
 
-    /// Make the best move for the current player from `self.to_move`.
+    /// Make the best move where the player to move is `self.to_move`.
+    ///
+    /// Set `self.to_move` with [`Self::set_to_move`]
     pub fn make_best_move(&mut self) {
         let mut best_score: Score = Score::NEG_INFINITY;
         let mut best_move: Option<EngineMove> = None;

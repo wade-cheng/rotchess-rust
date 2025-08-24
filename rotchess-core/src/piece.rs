@@ -374,6 +374,7 @@ impl From<(&CorePieceData, &SecondaryPieceData)> for TertiaryPieceData {
     }
 }
 
+/// A piece. Like from chess. Like a rook, or such.
 #[derive(Clone)]
 pub struct Piece {
     core: CorePieceData,
@@ -497,15 +498,17 @@ impl Piece {
         }
     }
 
+    /// If one coord is a piece and the other is a point, do they collide?
     pub fn collidepoint_generic(x1: f32, y1: f32, x2: f32, y2: f32) -> bool {
         (x1 - x2).powi(2) + (y1 - y2).powi(2) < PIECE_RADIUS.powi(2)
     }
 
+    /// Whether the point (x, y) collides with this piece.
     pub fn collidepoint(&self, x: f32, y: f32) -> bool {
         Piece::collidepoint_generic(x, y, self.core.center.0, self.core.center.1)
     }
 
-    /// Whether a piece with center (x, y) collides with self.
+    /// Whether a piece with center (x, y) collides with this piece.
     pub fn collidepiece(&self, x: f32, y: f32) -> bool {
         ((x - self.core.center.0).powi(2) + (y - self.core.center.1).powi(2))
             < (PIECE_RADIUS * 2.).powi(2)
@@ -649,20 +652,12 @@ pub enum TravelKind {
     Move,
 }
 
-#[derive(Debug)]
-pub struct TravelPoint {
-    pub x: f32,
-    pub y: f32,
-    pub travelable: bool,
-    pub kind: TravelKind,
-}
-
 /// An identifier used to find a piece within a [`Pieces`]
 ///
 /// The type or concept this aliases may change. In particular, do not assume this is an index into the inner piece Vec.
 pub type PieceId = usize;
 
-/// A vector of pieces.
+/// A set of pieces.
 ///
 /// # Invariants
 ///
@@ -748,10 +743,12 @@ impl Pieces {
         self.inner.iter().position(|piece| piece.collidepoint(x, y))
     }
 
+    /// Get the piece with an id, if the piece exists.
     pub fn get(&self, id: PieceId) -> Option<&Piece> {
         self.inner.get(id)
     }
 
+    /// Get a mutable piece given an id, if the piece exists.
     pub fn get_mut(&mut self, id: PieceId) -> Option<&mut Piece> {
         self.inner.get_mut(id)
     }

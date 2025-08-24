@@ -4,9 +4,17 @@
 //! to do it, as opposed to hand coding your own wrapper around `rotchess-core`.
 
 use rotchess_core::{
-    piece::{Piece, PieceId, Pieces, TravelKind, TravelPoint},
+    piece::{Piece, PieceId, Pieces, TravelKind},
     turn::Turns,
 };
+
+#[derive(Debug)]
+pub struct TravelPoint {
+    pub x: f32,
+    pub y: f32,
+    pub travelable: bool,
+    pub kind: TravelKind,
+}
 
 pub use rotchess_core::piece;
 
