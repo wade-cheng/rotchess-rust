@@ -92,6 +92,7 @@ impl Turns {
 pub const MAX_CAPTURES: usize = 4;
 
 /// The travel phase of a rotchess move.
+#[derive(Clone, Debug)]
 pub struct TravelPhase {
     /// The piece that travels
     piece: PieceId,
@@ -140,6 +141,7 @@ impl TravelPhase {
     }
 }
 
+#[derive(Debug)]
 pub struct RotationPhase {
     /// The piece that rotates.
     pub piece: PieceId,
@@ -152,6 +154,7 @@ pub struct RotationPhase {
 /// A rotchess move.
 ///
 /// These should capture both the forward and backward direction move.
+#[derive(Debug)]
 pub struct Move {
     pub travel: TravelPhase,
     pub rotate: RotationPhase,
@@ -215,7 +218,7 @@ impl Turns {
         for move_ in self.all_moves() {
             self.apply(&move_);
             let score = -self.negamax_ab(depth - 1, -beta, -alpha);
-            self.unapply();
+            self.unapply(&move_);
 
             if score > best_score {
                 best_score = score;
@@ -241,12 +244,10 @@ impl Turns {
         self.working_board.init_all_auxiliary_data();
         self.turns[self.curr_turn].init_all_auxiliary_data();
 
-        let moves = self.all_moves();
-        assert!(!moves.is_empty());
-        for move_ in moves {
+        for move_ in self.all_moves() {
             self.apply(&move_);
             let score = -self.negamax_ab(DEPTH, Score::NEG_INFINITY, Score::INFINITY);
-            self.unapply();
+            self.unapply(&move_);
 
             if score >= best_score {
                 best_score = score;
@@ -255,6 +256,8 @@ impl Turns {
         }
 
         self.apply(&best_move.expect("should've found a valid move."));
+        self.save_turn();
+        // println!("best move was {:#?}", best_move.unwrap());
 
         println!("best move had score {best_score}");
         println!(
@@ -265,8 +268,9 @@ impl Turns {
     }
 
     /// Reverses effects of [`apply`][`Turns::apply`].
-    fn unapply(&mut self) {
-        self.prev().expect("There will be a prev move.");
+    fn unapply(&mut self, move_: &Move) {
+        self.working_board.unmake_move(move_);
+
         self.to_move = self.to_move.toggled();
     }
 
@@ -296,7 +300,6 @@ impl Turns {
 
         self.working_board.make_move(move_);
 
-        self.save_turn();
         self.to_move = self.to_move.toggled();
     }
 
@@ -307,10 +310,11 @@ impl Turns {
         self.working_board.init_all_auxiliary_data();
 
         let mut ans = vec![];
-        for piece in self.working_board.board_pieces() {
-            if piece.side() != self.to_move {
-                continue;
-            }
+        for piece in self
+            .working_board_ref()
+            .board_pieces()
+            .filter(|piece| piece.side() == self.to_move)
+        {
             for (tvk, x, y) in piece.travel_points_unchecked() {
                 if let Some(travel) = self.working_board_ref().travelable(&piece, x, y, tvk) {
                     ans.push(Move {
