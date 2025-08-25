@@ -163,7 +163,7 @@ pub struct Move {
 /// Score for how good a position is as a float from positive to negative infinity.
 pub type Score = f32;
 /// depth of negamax search in plies
-const DEPTH: usize = 3;
+const DEPTH: usize = 1;
 
 /// Engine code.
 impl Turns {
@@ -317,14 +317,22 @@ impl Turns {
         {
             for (tvk, x, y) in piece.travel_points_unchecked() {
                 if let Some(travel) = self.working_board_ref().travelable(&piece, x, y, tvk) {
-                    ans.push(Move {
-                        travel,
-                        rotate: RotationPhase {
-                            piece: piece.id(),
-                            src: piece.angle(),
-                            dest: piece.angle(),
-                        },
-                    });
+                    for arb_piece in self
+                        .working_board_ref()
+                        .board_pieces()
+                        .filter(|piece| piece.side() == self.to_move)
+                    {
+                        for unique_rot in arb_piece.kind().unique_rotations() {
+                            ans.push(Move {
+                                travel: travel.clone(),
+                                rotate: RotationPhase {
+                                    piece: arb_piece.id(),
+                                    src: arb_piece.angle(),
+                                    dest: unique_rot,
+                                },
+                            });
+                        }
+                    }
                 }
             }
         }
