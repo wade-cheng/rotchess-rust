@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use crate::piece::{PieceId, Pieces, Side};
 
 pub struct Turns {
@@ -185,6 +187,17 @@ impl Turns {
                 } * piece.kind().value()
                     * 100.;
 
+            // penalize non-rotated pieces
+            ans +=
+                mult * match piece.side() {
+                    Side::Black => -1.,
+                    Side::White => 1.,
+                } * if piece.angle() == -PI || piece.angle() == 0. {
+                    -1.
+                } else {
+                    1.
+                };
+
             // make pieces go toward center.
             /// Center of the board in rotchess units.
             const CENTER_X: f32 = 4.0;
@@ -255,9 +268,9 @@ impl Turns {
             }
         }
 
-        self.apply(&best_move.expect("should've found a valid move."));
+        self.apply(best_move.as_ref().expect("should've found a valid move."));
         self.save_turn();
-        // println!("best move was {:#?}", best_move.unwrap());
+        println!("best move was {:#?}", best_move.unwrap());
 
         println!("best move had score {best_score}");
         println!(
