@@ -829,6 +829,19 @@ impl Pieces {
         move_piece.set_angle(move_.rotate.dest);
     }
 
+    pub fn unmake_move(&mut self, move_: &Move) {
+        let travel_piece = self.get_mut(move_.travel.piece()).expect("exists");
+
+        travel_piece.set_center(move_.travel.src());
+        for pieceid in move_.travel.captures() {
+            // re-alive the piece
+            self.inner[*pieceid].0 = true;
+        }
+
+        let move_piece = self.get_mut(move_.rotate.piece).expect("exists");
+        move_piece.set_angle(move_.rotate.src);
+    }
+
     /// Get the piece that collides with `(x, y)`, if it exists.
     pub fn get_id(&self, x: f32, y: f32) -> Option<PieceId> {
         for piece in self.board_pieces() {

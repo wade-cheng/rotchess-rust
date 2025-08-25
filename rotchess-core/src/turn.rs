@@ -103,15 +103,6 @@ pub struct TravelPhase {
     captures: (usize, [PieceId; MAX_CAPTURES]),
 }
 
-pub struct RotationPhase {
-    /// The piece that rotates.
-    pub piece: PieceId,
-    /// Rotates from this angle. (must be equal to `piece.angle()` on init)
-    pub src: f32,
-    /// Rotate to this angle.
-    pub dest: f32,
-}
-
 impl TravelPhase {
     /// Create a new TravelPhase for a rotating chess move.
     ///
@@ -135,6 +126,10 @@ impl TravelPhase {
         self.piece
     }
 
+    pub fn src(&self) -> (f32, f32) {
+        self.src
+    }
+
     pub fn dest(&self) -> (f32, f32) {
         self.dest
     }
@@ -143,6 +138,15 @@ impl TravelPhase {
         let (len, buf) = &self.captures;
         &buf[0..*len]
     }
+}
+
+pub struct RotationPhase {
+    /// The piece that rotates.
+    pub piece: PieceId,
+    /// Rotates from this angle. (must be equal to `piece.angle()` on init)
+    pub src: f32,
+    /// Rotate to this angle.
+    pub dest: f32,
 }
 
 /// A rotchess move.
