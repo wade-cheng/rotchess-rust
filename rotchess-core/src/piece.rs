@@ -1,6 +1,6 @@
 use std::{collections::HashSet, f32::consts::PI, hash::Hash};
 
-use crate::turn::{Move, Score, TravelPhase};
+use crate::turn::{MAX_CAPTURES, Move, Score, TravelPhase};
 
 /// An iterable over the distances of a [`DistancesAngle`].
 ///
@@ -901,10 +901,10 @@ impl Pieces {
         macro_rules! travelphase_answer {
             () => {{
                 let len = pieces_overlapping_endpoint.len();
-                let mut capture_ids: [usize; 4] = [0; 4];
+                let mut capture_ids: [usize; MAX_CAPTURES] = [0; MAX_CAPTURES];
                 for (i, piece) in pieces_overlapping_endpoint.into_iter().enumerate() {
-                    if i == 4 {
-                        panic!("How in the world did you manage to capture more than four pieces?");
+                    if i == MAX_CAPTURES {
+                        panic!("How in the world did you manage to capture that many pieces?");
                     }
                     capture_ids[i] = piece.id();
                 }

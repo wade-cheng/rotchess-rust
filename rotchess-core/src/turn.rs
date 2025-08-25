@@ -88,6 +88,9 @@ impl Turns {
     }
 }
 
+/// The maximum captures that might happen at once.
+pub const MAX_CAPTURES: usize = 4;
+
 /// The travel phase of a rotchess move.
 pub struct TravelPhase {
     /// The piece that travels
@@ -97,7 +100,7 @@ pub struct TravelPhase {
     /// Travels to here
     dest: (f32, f32),
     /// (n, arr) s.t. arr[0..n] are the pieces captured. accessing arr[n..] is undefined.
-    captures: (usize, [PieceId; 4]),
+    captures: (usize, [PieceId; MAX_CAPTURES]),
 }
 
 pub struct RotationPhase {
@@ -118,7 +121,7 @@ impl TravelPhase {
         piece: PieceId,
         src: (f32, f32),
         dest: (f32, f32),
-        captures: (usize, [PieceId; 4]),
+        captures: (usize, [PieceId; MAX_CAPTURES]),
     ) -> Self {
         Self {
             piece,
