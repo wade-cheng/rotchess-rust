@@ -196,6 +196,34 @@ impl PieceKind {
         *self == PieceKind::Pawn
     }
 
+    /// Return the unique rotations of this piece.
+    ///
+    /// These are the "possible" rotations, removing duplicates. We use a constant precision, so only every so
+    /// many real values will be sampled. So, as an example, a queen might have `(0..45).step_by(PRECISION)`
+    /// while a pawn has `(0..360).step_by(PRECISION)`.
+    pub fn unique_rotations(&self) -> impl Iterator<Item = f32> {
+        Self::unique_rotations_generic(self.rotational_symmetry()).map(|val| val as f32)
+    }
+
+    fn rotational_symmetry(&self) -> u16 {
+        match self {
+            PieceKind::Pawn => 360,
+            PieceKind::King => 90,
+            PieceKind::Knight => 90,
+            PieceKind::Rook => 90,
+            PieceKind::Bishop => 90,
+            PieceKind::Queen => 45,
+        }
+    }
+
+    /// Return the unique rotations of a piece that has the same distances angles when rotating by the parameter.
+    fn unique_rotations_generic(
+        rotational_symmetry: u16,
+    ) -> std::iter::StepBy<std::ops::Range<u16>> {
+        const PRECISION: usize = 10;
+        (0..rotational_symmetry).step_by(PRECISION)
+    }
+
     /// Add the DAs of a rook to `v`.
     fn add_level_das(v: &mut Vec<DistancesAngle>) {
         for i in 0..4 {
@@ -825,11 +853,14 @@ impl Pieces {
             self.inner[*pieceid].0 = false;
         }
 
-        let move_piece = self.get_mut(move_.rotate.piece).expect("exists");
-        move_piece.set_angle(move_.rotate.dest);
+        let rotate_piece = self.get_mut(move_.rotate.piece).expect("exists");
+        rotate_piece.set_angle(move_.rotate.dest);
     }
 
     pub fn unmake_move(&mut self, move_: &Move) {
+        let rotate_piece = self.get_mut(move_.rotate.piece).expect("exists");
+        rotate_piece.set_angle(move_.rotate.src);
+
         let travel_piece = self.get_mut(move_.travel.piece()).expect("exists");
 
         travel_piece.set_center(move_.travel.src());
@@ -837,9 +868,6 @@ impl Pieces {
             // re-alive the piece
             self.inner[*pieceid].0 = true;
         }
-
-        let move_piece = self.get_mut(move_.rotate.piece).expect("exists");
-        move_piece.set_angle(move_.rotate.src);
     }
 
     /// Get the piece that collides with `(x, y)`, if it exists.
