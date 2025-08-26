@@ -220,7 +220,10 @@ impl PieceKind {
     fn unique_rotations_generic(
         rotational_symmetry: u16,
     ) -> std::iter::StepBy<std::ops::Range<u16>> {
-        const PRECISION: usize = 10;
+        // const PRECISION: usize = 10;
+        // const PRECISION: usize = 22;
+        const PRECISION: usize = 45;
+        // ok turns out this is outright wrong because we do radians, not degrees, whoops.
         (0..rotational_symmetry).step_by(PRECISION)
     }
 
