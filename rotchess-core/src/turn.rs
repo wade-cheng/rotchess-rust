@@ -335,16 +335,22 @@ impl Turns {
                         .board_pieces()
                         .filter(|piece| piece.side() == self.to_move)
                     {
-                        for unique_rot in arb_piece.kind().unique_rotations() {
-                            ans.push(Move {
-                                travel: travel.clone(),
-                                rotate: RotationPhase {
-                                    piece: arb_piece.id(),
-                                    src: arb_piece.angle(),
-                                    dest: unique_rot,
-                                },
-                            });
-                        }
+                        ans.push(Move {
+                            travel: travel.clone(),
+                            rotate: RotationPhase {
+                                piece: arb_piece.id(),
+                                src: arb_piece.angle(),
+                                dest: arb_piece.angle() + PI / 8.,
+                            },
+                        });
+                        ans.push(Move {
+                            travel: travel.clone(),
+                            rotate: RotationPhase {
+                                piece: arb_piece.id(),
+                                src: arb_piece.angle(),
+                                dest: arb_piece.angle() - PI / 8.,
+                            },
+                        });
                     }
                 }
             }
