@@ -165,6 +165,7 @@ impl RotchessEmulator {
 
     pub fn make_best_move(&mut self) {
         self.turns.make_best_move();
+        self.selected_piece = None;
     }
 
     /// Handle an event.
