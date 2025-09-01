@@ -919,6 +919,7 @@ impl Pieces {
                 *alive = false;
             }
         }
+        self.inner[id].0 = true; // if we've killed ourself, unkill ourself.
 
         let piece = &mut self.inner[id].1;
         piece.set_x(x);

@@ -74,7 +74,13 @@ pub struct RotchessEmulator {
     /// selected piece. Additionally, `travelpoints_buffer` is the travel
     /// points that that piece has access to.
     selected_piece: Option<PieceId>,
-    /// (idx of travelpoint within buffer, angle offset of drag, whether we have dragged yet)
+    /// Whether the selected piece is a drag-to-move selected piece.
+    ///
+    /// i.e. whether it's being dragged. If so, store its original center.
+    selected_piece_being_dragged: Option<(f32, f32)>,
+    /// Whether we have MBD'd this tvp.
+    ///
+    /// (idx of travelpoint within buffer, angle offset of drag, whether we have dragged tvp yet)
     ///
     /// Set when we mbd to hold a travel point, updated when we drag it around.
     selected_travelpoint: Option<(usize, f32, bool)>,
@@ -96,6 +102,7 @@ impl RotchessEmulator {
         Self {
             travelpoints_buffer: vec![],
             selected_piece: None,
+            selected_piece_being_dragged: None,
             selected_travelpoint: None,
             turns: Turns::with(pieces),
         }
@@ -199,6 +206,13 @@ impl RotchessEmulator {
 
                     self.selected_travelpoint = Some((tvp_idx, angle_offset, true));
                 }
+
+                if self.selected_piece_being_dragged.is_some() {
+                    self.turns.working_board_mut()
+                        .get_mut(self.selected_piece.expect("invariant---move selected_piece_being_dragged into selected piece, later?"))
+                        .expect("exists, move selpbd into selected again.")
+                        .set_center((x,y));
+                }
                 None
             }
             Event::ButtonDown {
@@ -284,31 +298,22 @@ impl RotchessEmulator {
                     }
                 }
 
-                // handle piece selection
-                match (idx_of_piece_at_xy, self.selected_piece) {
-                    (Some(new_i), Some(curr_sel_i)) => {
-                        // we clicked on a piece, and a piece is already selected.
-                        if new_i == curr_sel_i {
-                            // we clicked on the already-selected piece, deselect it.
-                            self.selected_piece = None;
-                        } else {
-                            // we clicked on a different piece, select that instead.
-                            self.selected_piece = Some(new_i);
-                            self.update_travelpoints_unchecked();
-                        }
-                        return None;
-                    }
-                    (Some(new_i), None) => {
-                        // we clicked on a piece, and None pieces were selected.
-                        self.selected_piece = Some(new_i);
-                        self.update_travelpoints_unchecked();
-                        return None;
-                    }
-                    (None, _) => {
-                        if self.selected_travelpoint.is_none() {
-                            self.selected_piece = None;
-                        }
-                    }
+                // handle piece dragging
+                if let Some(idx) = idx_of_piece_at_xy {
+                    self.selected_piece = Some(idx);
+                    self.update_travelpoints_unchecked();
+                    self.selected_piece_being_dragged = Some(
+                        self.turns
+                            .working_board_ref()
+                            .get(idx)
+                            .expect("exists bc we found it above")
+                            .center(),
+                    );
+                    self.turns
+                        .working_board_mut()
+                        .get_mut(idx)
+                        .expect("exists bc we found it above")
+                        .set_center((x, y));
                 }
                 None
             }
@@ -318,6 +323,42 @@ impl RotchessEmulator {
                 button: MouseButton::LEFT,
             } => {
                 // println!("up: {} {}", x, y);
+
+                // if we're dragging and we just released, remember to mark no longer selected_piece_being_dragged
+                if let Some(orig_center) = self.selected_piece_being_dragged {
+                    // if we can find a travelable tvp under the mouse that we just released, travel. otherwise, snap back to orig_center.
+                    if let Some(tvp_idx) = self.travelpoints_buffer.iter().position(|tvp| {
+                        tvp.travelable && Piece::collidepoint_generic(tvp.x, tvp.y, x, y)
+                    }) {
+                        let tvp = &self.travelpoints_buffer[tvp_idx];
+                        let (tvp_x, tvp_y) = (tvp.x, tvp.y);
+
+                        let pieces = &mut self.turns.working_board_mut();
+                        let piece_id = self // the idx of the piece that moves
+                            .selected_piece
+                            .expect("Invariant of selected_travelpoint.issome");
+                        let piece_color_that_just_moved =
+                            pieces.get(piece_id).expect("exists").side();
+                        pieces.travel(piece_id, tvp_x, tvp_y);
+                        pieces.get(piece_id).expect("exists");
+                        self.selected_piece = Some(piece_id);
+                        self.update_travelpoints_unchecked();
+                        self.selected_piece = None;
+                        self.selected_travelpoint = None;
+                        self.turns.save_turn();
+                        self.turns
+                            .set_to_move(piece_color_that_just_moved.toggled());
+                        self.selected_piece_being_dragged = None;
+                        return Some(ThingHappened::Move(piece_id, tvp_x, tvp_y));
+                    } else {
+                        self.turns
+                            .working_board_mut()
+                            .get_mut(self.selected_piece.expect("invt of selpiecebeingdrag"))
+                            .expect("exists from selpiece")
+                            .set_center(orig_center);
+                        self.selected_piece_being_dragged = None;
+                    }
+                }
 
                 if let Some((trav_idx, _, false)) = self.selected_travelpoint {
                     // if we selected a travelpoint and it hasn't been moved yet, we want to try
